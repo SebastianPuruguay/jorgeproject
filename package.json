@@ -8,7 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@arduino/arduino-iot-client": "^3.0.0",
+    "axios": "^1.8.3",
     "core-js": "^3.8.3",
+    "querystring-es3": "^0.2.1",
     "vue": "^3.2.13"
   },
   "devDependencies": {
