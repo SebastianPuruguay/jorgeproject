@@ -5,5 +5,5 @@
 </template>
 
 <script setup>
-import ArduinoProperties from './components/ArduinoProperties.vue';
+import ArduinoProperties from './layouts/MainLayout.vue';
 </script>

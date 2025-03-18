@@ -1,250 +1,222 @@
+<!-- eslint-disable no-unused-vars -->
+<script setup>
+import HeaderComponent from '@/components/HeaderComponent.vue';
+import BarraInform from '@/components/BarraInform.vue';
+import { getThings } from '@/services/arduinoService';
+import { ref, onMounted } from 'vue';
+import "leaflet/dist/leaflet.css";
+import * as L from 'leaflet';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import "leaflet.markercluster";
+import { addressPoints } from '../components/markerDemo';
+import icon from '../components/icon.png';
+import markerShadow from '../components/marker-shadow.png';
+
+const mapContainer = ref(null);
+const initialMap = ref(null);
+const things = ref([]);
+const toggleDrawer = () => {
+  console.log("Abrir/cerrar menú lateral");
+};
+const myIcon = L.icon({
+    iconUrl: icon,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -30],
+    shadowUrl: markerShadow,
+    shadowSize: [60, 30],
+    shadowAnchor: [15, 30]
+});
+
+onMounted(async () => {
+    if (!mapContainer.value) return;
+
+  // Inicializa el mapa
+  initialMap.value = L.map('map', {
+    zoomControl: true,
+    zoom: 1,
+    zoomAnimation: false,
+    fadeAnimation: true,
+    markerZoomAnimation: true
+  }).setView([-12.10057710407106, -76.98658195437011], 15);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(initialMap.value);
+
+    // Obtener datos desde Arduino IoT
+    try {
+        things.value = await getThings();
+        console.log('Things:', things.value);
+    } catch (error) {
+        console.error('Error al cargar las Things:', error);
+    }
+    initialMap.value.whenReady(async () => {    
+    const markers = L.markerClusterGroup();
+
+    const levels = {
+    co2: [
+        { max: 400, color: '#00FF00', label: 'Bajo (Excelente)' }, 
+        { max: 1000, color: '#FFFF00', label: 'Moderado' }, 
+        { max: 2000, color: '#FFA500', label: 'Alto (Precaución)' }, 
+        { max: 5000, color: '#FF4500', label: 'Muy alto (Peligro)' }, 
+        { max: Infinity, color: '#8B0000', label: 'Extremo (Emergencia)' }
+    ],
+    pm10: [
+        { max: 50, color: '#00FF00', label: 'Bueno' }, 
+        { max: 100, color: '#FFFF00', label: 'Moderado' }, 
+        { max: 250, color: '#FFA500', label: 'Poco saludable' }, 
+        { max: 350, color: '#FF4500', label: 'Muy dañino' }, 
+        { max: Infinity, color: '#8B0000', label: 'Peligroso' }
+    ],
+    pm25: [
+        { max: 30, color: '#00FF00', label: 'Bueno' }, 
+        { max: 60, color: '#FFFF00', label: 'Moderado' }, 
+        { max: 150, color: '#FFA500', label: 'Poco saludable' }, 
+        { max: 250, color: '#FF4500', label: 'Muy dañino' }, 
+        { max: Infinity, color: '#8B0000', label: 'Peligroso' }
+    ]
+};
+    addressPoints.forEach((point) => {
+        if (point.latitude && point.longitude && things.value.length > 2) {
+            const thingHumidity = things.value[0] || { name: 'Desconocido', last_value: 'N/A' };
+            const thingTemperature = things.value[1] || { name: 'Desconocido', last_value: 'N/A' };
+            const thingCO2 = things.value[2] || { name: 'Desconocido', last_value: 'N/A' };
+            const thingPM10 = things.value[3] || { name: 'Desconocido', last_value: 'N/A' };
+            const thingPM1_0 = things.value[4] || { name: 'Desconocido', last_value: 'N/A' };
+            const thingPM25 = things.value[5] || { name: 'Desconocido', last_value: 'N/A' };
+
+           
+        const co2Value = parseFloat(thingCO2.last_value) || 0;
+        const pm10Value = parseFloat(thingPM10.last_value) || 0;
+        const pm25Value = parseFloat(thingPM25.last_value) || 0;
+
+        const co2Level = levels.co2.find(l => co2Value <= l.max);
+        const pm10Level = levels.pm10.find(l => pm10Value <= l.max);
+        const pm25Level = levels.pm25.find(l => pm25Value <= l.max);
+
+        // Determinar el color más crítico (peor valor)
+        const worstColor = [co2Level.color, pm10Level.color, pm25Level.color].sort((a, b) => {
+            return Object.values(levels).flat().find(l => l.color === b).max - 
+                   Object.values(levels).flat().find(l => l.color === a).max;
+        })[0];
+        const popupContent = `
+    <div style="
+        color: #000; 
+        padding: 15px; 
+        border-radius: 10px; 
+        text-align: center;
+        font-weight: bold;
+    ">
+        <h3 style="margin: 0 0 10px;">Niveles de Contaminación</h3>
+        <p style="font-size: 1.2em; background-color: ${co2Level.color}; padding: 5px; border-radius: 5px;">
+            CO2: ${co2Value} ppm — ${co2Level.label}
+        </p>
+        <p style="font-size: 1.2em; background-color: ${pm10Level.color}; padding: 5px; border-radius: 5px;">
+            PM10: ${pm10Value} µg/m³ — ${pm10Level.label}
+        </p>
+        <p style="font-size: 1.2em; background-color: ${pm25Level.color}; padding: 5px; border-radius: 5px;">
+            PM2.5: ${pm25Value} µg/m³ — ${pm25Level.label}
+        </p>
+        <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNTNybzU1cmF0cTY3Y3J6Ym5zZm5heWZyM2IwdmoxNG42eWxkbDVhbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Hkya3YFcXcmQ0/giphy.gif" width="120px" alt="Nivel de CO2">
+    </div>
+`;
+
+
+
+            const marker = L.marker([point.latitude, point.longitude], { icon: myIcon })
+                .bindPopup(popupContent);
+                
+            markers.addLayer(marker);
+        }
+    });
+
+    initialMap.value.addLayer(markers);
+
+    if (markers.getLayers().length > 0) {
+        initialMap.value.fitBounds(markers.getBounds());
+    }
+});
+
+    // Añadir marcadores con datos dinámicos
+
+
+    
+
+    // Añadir leyenda de contaminación
+    const legend = L.control({ position: 'bottomleft' });
+
+    legend.onAdd = function () {
+        const div = L.DomUtil.create('div', 'info legend');
+        const grades = [0, 20, 40, 60, 80, 100];
+        const colors = ['#00FF00', '#FFFF00', '#FFA500', '#FF4500', '#FF0000', '#8B0000'];
+
+        div.innerHTML = '<strong>Niveles de Contaminación</strong><br>';
+        for (let i = 0; i < grades.length; i++) {
+            div.innerHTML +=
+                `<i style="background:${colors[i]}; width: 18px; height: 18px; display: inline-block; margin-right: 8px;"></i> 
+                ${grades[i]}% ${grades[i + 1] ? ' - ' + grades[i + 1] + '%' : '+'}<br>`;
+        }
+        return div;
+    };
+
+    legend.addTo(initialMap.value);
+});
+</script>
+
 <template>
-    <q-layout view="lHh Lpr lFf">
-      <q-header elevated class="colorLAyout">
-        <q-toolbar>
-          <q-btn
-            class="btnCerrar"
-            flat
-            dense
-            round
-            aria-label="Menu"
-            @click="toggleLeftDrawer"
-            v-if="showDivs && tipUser == 1"
-          >
-            <template v-slot:default>
-              <img
-                src="src/assets/menu.png"
-                alt="Menu"
-                style="width: 24px; height: 24px"
-              />
-            </template>
-          </q-btn>
+      <div>
+        <HeaderComponent @toggleDrawer="toggleDrawer" />
+        <h1>Arduino Things</h1>
+        <ul>
+          <li v-for="thing in things" :key="thing.last_value">
+            {{ thing.name }} (Valor: {{ thing.last_value }})
+          </li>
+        </ul>
+      </div>
   
-          <q-img
-            src="src\assets\logofab.png"
-            class="logFab"
-            @click="DasbPrincipalLog"
-          ></q-img>
+      <div id="map" ref="mapContainer" style="height: 515px;"></div>
   
-          <q-btn-dropdown
-            :label="currentLanguageLabel"
-            icon="language"
-            flat
-            color="red"
-          >
-            <q-list>
-              <q-item clickable v-close-popup @click="$i18n.locale = 'es-PE'">
-                <q-item-section>Spanish</q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup @click="$i18n.locale = 'en-US'">
-                <q-item-section>English</q-item-section>
-              </q-item>
-            </q-list>
-          </q-btn-dropdown>
-          <div class="divNostr">
-            <a @click="Nosotros" class="StyleNos">
-              {{ $t("MainLayout.nosotros") }}
-            </a>
-          </div>
-          <div class="divBtn">
-            <q-btn
-              class="stlBTIniciarSesion"
-              @click="loguearse"
-              v-if="!showDivs"
-              >{{ $t("MainLayout.iniciarS") }}</q-btn
-            >
-            <q-btn
-              class="stlBTCerrarSesion"
-              v-if="showDivs"
-              @click="cerrarSesion"
-              >{{ $t("MainLayout.cerrarS") }}</q-btn
-            >
-          </div>
-        </q-toolbar>
-      </q-header>
-  
-      <q-drawer
-        v-model="leftDrawerOpen"
-        overlay
-        bordered
-        class="menuEstilo"
-        v-if="tipUser == 1"
-      >
-        <q-toolbar>
-          <q-btn flat round dense @click="toggleLeftDrawer" class="btnCerrar">
-            <!-- Utiliza el slot de contenido del botón para colocar la imagen -->
-            <template v-slot:default>
-              <img
-                src="src/assets/close.png"
-                alt="Cerrar"
-                style="width: 24px; height: 24px"
-              />
-            </template>
-          </q-btn>
-  
-          <q-img src="src\assets\logofab.png" class="logFabtitle"></q-img>
-        </q-toolbar>
-        <div class="rectangulo-fino-horizontal"></div>
-        <q-div>
-          <EssentialLink />
-        </q-div>
-      </q-drawer>
-  
-      <q-page-container>
-        <router-view @loginSuccess="handleLoginSuccess" />
-      </q-page-container>
-    </q-layout>
+      <BarraInform class="bg-red-500 text-white" />  
   </template>
   
-  <script setup>
-  
-  </script>
-  
-  <style lang="scss">
-  @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap");
-  
-  /*///////////////////// Estilos para computadora /////////////////////////////*/
-  @media screen and (min-width: 844px) {
-    .colorLAyout {
-      background-color: #d9d9d9;
-      padding: 20px 20px;
-    }
-    .stlBTIniciarSesion {
-      color: #ffff;
-      background-color: #db0e0e;
-      border-radius: 10px;
-      font-family: "lexend";
-      font-size: 120%;
-    }
-    .stlBTCerrarSesion {
-      color: #ffff;
-      background-color: #db0e0e;
-      border-radius: 10px;
-      font-family: "lexend";
-      font-size: 120%;
-    }
-    .divBtn {
-      margin-left: 70%;
-    }
-    .logFab {
-      width: 10%;
-      min-width: 10%;
-      margin-left: 1%;
-      cursor: pointer;
-    }
-    .menuEstilo {
-      background-color: #d9d9d9;
-    }
-    .btnCerrar {
-      color: #db0e0e;
-    }
-    .title_toolbar {
-      font-family: "lexend";
-      font-size: 250%;
-      font-weight: 54%;
-      color: #db0e0e;
-    }
-    .logFabtitle {
-      width: 50%;
-      margin-top: 5%;
-      margin-left: 15%;
-    }
-  
-    .rectangulo-fino-horizontal {
-      margin-top: 5%;
-      border: 1px solid #db0e0e;
-      background-color: #db0e0e;
-      width: 60%; /* Ancho del rectángulo */
-      height: 0.05px; /* Altura del rectángulo */
-      margin-left: 25%;
-    }
-    .StyleNos {
-      font-family: "lexend";
-      color: #db0e0e;
-      text-decoration: underline;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    .divNostr {
-      position: absolute;
-      left: 80%;
-      top: 40%;
-      height: 50px;
-      width: 50px;
-    }
-    /* Estilo para el scroll */
-    ::-webkit-scrollbar {
-      width: 10px; /* Ancho del scroll */
-    }
-  
-    /* Estilo para el pulgar (barra de desplazamiento) del scroll */
-    ::-webkit-scrollbar-thumb {
-      background-color: #2c3039; /* Color rojo */
-      border-radius: 5px; /* Borde redondeado */
-    }
-    ::-webkit-scrollbar-track {
-      background-color: #f1f1f1;
-    }
-  }
-  
-  /*///////////////////// Estilos para celulares /////////////////////////////*/
-  @media screen and (max-width: 844px) {
-    .colorLAyout {
-      background-color: #d9d9d9;
-      padding: 15px 15px;
-    }
-    .btnCerrar {
-      color: #db0e0e;
-    }
-    .menuEstilo {
-      background-color: #d9d9d9;
-    }
-    .logFab {
-      width: 20%;
-      min-width: 20%;
-      margin-left: 1%;
-      cursor: pointer;
-    }
-    .stlBTIniciarSesion {
-      color: #ffff;
-      background-color: #db0e0e;
-      border-radius: 5px;
-      font-family: "lexend";
-      font-size: 80%;
-    }
-    .divBtn {
-      margin-left: 2%;
-    }
-    .logFabtitle {
-      width: 50%;
-      margin-top: 5%;
-      margin-left: 15%;
-    }
-  
-    .rectangulo-fino-horizontal {
-      margin-top: 5%;
-      border: 1px solid #db0e0e;
-      background-color: #db0e0e;
-      width: 60%; /* Ancho del rectángulo */
-      height: 0.05px; /* Altura del rectángulo */
-      margin-left: 25%;
-    }
-    .StyleNos {
-      font-family: "lexend";
-      color: #db0e0e;
-      text-decoration: underline;
-      font-size: 14px;
-    }
-    .divNostr {
-      padding-left: 0%;
-    }
-    .stlBTCerrarSesion {
-      color: #ffff;
-      background-color: #db0e0e;
-      border-radius: 10px;
-      font-family: "lexend";
-      font-size: 80%;
-    }
-  }
-  </style>
-  
+<style>
+.legend {
+  background: white;
+  padding: 10px;
+  font-size: 14px;
+  line-height: 18px;
+  color: #333;
+  border-radius: 5px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+.legend i {
+  border: 1px solid #999;
+}
+/* Asegurar que no haya márgenes ni espacios blancos */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Hacer que el `body` y `html` ocupen toda la pantalla */
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #504e4ed9; /* Opcional: color de fondo oscuro */
+  color: white; /* Opcional: color de texto */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
+/* Asegurar que el `div` raíz también ocupe toda la pantalla */
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+</style>
