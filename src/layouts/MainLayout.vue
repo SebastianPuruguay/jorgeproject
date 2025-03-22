@@ -167,7 +167,7 @@ function getGifByPM25Level(level) {
 
          // Crear el botón manualmente
   const button = document.createElement("button");
-  button.textContent = "Abrir Modal";
+  button.textContent = "+ Info";
   button.style.cssText = `
     background-color: #3b82f6; 
     color: white; 
@@ -186,7 +186,7 @@ function getGifByPM25Level(level) {
   // Crear el contenido del popup
   const popupDiv = document.createElement("div");
          popupDiv.innerHTML =`
-<div style="color: #000; background-color: white; padding: 20px; border-radius: 10px; text-align: center; font-weight: bold; width: auto; max-width: 900px; margin: 0 auto; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+<div style="color: #000; background-color: white; padding: 20px; border-radius: 10px; text-align: center; font-weight: bold; width: 500px; max-width: 900px; margin: 0 auto; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
     <h3 style="margin: 0 0 15px; font-size: 1.5em;">Niveles de Contaminación</h3>
     
     <!-- Contenedor con columnas verticales -->
@@ -238,8 +238,7 @@ function getGifByPM25Level(level) {
 
                 // Create marker and add to cluster
                 const marker = L.marker([point.latitude, point.longitude], { icon: myIcon })
-                    .bindPopup(popupDiv);
-                    
+                .bindPopup(popupDiv, { maxWidth: "auto", minWidth: 400, maxHeight: 500 });
                 markers.addLayer(marker);
             }
         });
@@ -335,7 +334,7 @@ html, body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100px;
+    width: 200px;
     height: 100vh;
     display: flex;
     justify-content: center;
