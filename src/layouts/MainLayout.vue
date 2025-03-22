@@ -12,6 +12,20 @@ import "leaflet.markercluster";
 import { addressPoints } from '../components/markerDemo';
 import icon from '../components/icon.png';
 import markerShadow from '../components/marker-shadow.png';
+import ModalComponent from "@/pages/ModalMasInfo.vue";
+
+const isModalOpen = ref(false);
+const selectedContaminationData = ref(null);
+// Estado para manejar qué modal está abierto
+const activeModal = ref(null);
+const openModal = (ModalComponent) => {
+  selectedContaminationData.value = ModalComponent;
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
 
 const mapContainer = ref(null);
 const initialMap = ref(null);
@@ -79,6 +93,54 @@ onMounted(async () => {
         { max: Infinity, color: '#8B0000', label: 'Peligroso' }
     ]
 };
+function getGifByCO2Level(level) {
+  if (level.includes('Bajo (Excelente)')) {
+    return "https://media.giphy.com/media/l0MYSvPXN9StPGx4k/giphy.gif"; // Bosque verde/naturaleza saludable
+  } else if (level.includes('Moderado')) {
+    return "https://media.giphy.com/media/JoV2BiMWVZ96taSewG/giphy.gif"; // Ciudad con algo de contaminación
+  } else if (level.includes('Alto') || level.includes('Precaución')) {
+    return "https://media.giphy.com/media/3o7TKsQzRs1VWXuG3u/giphy.gif"; // Smog industrial
+  } else if (level.includes('Muy alto') || level.includes('Peligro')) {
+    return "https://media.giphy.com/media/xT0GqH01ZyKwd3aT3G/giphy.gif"; // Contaminación severa
+  } else if (level.includes('Extremo') || level.includes('Emergencia')) {
+    return "https://media.giphy.com/media/3o7aD4GrHwn8vsGBTa/giphy.gif"; // Emergencia/evacuación
+  } else {
+    return "https://media.giphy.com/media/Hkya3YFcXcmQ0/giphy.gif"; // GIF predeterminado
+  }
+}
+
+function getGifByPM10Level(level) {
+  if (level.includes('Bueno')) {
+    return "https://media.giphy.com/media/3ohzdJVOJsJR3nN0zK/giphy.gif"; // Aire limpio
+  } else if (level.includes('Moderado')) {
+    return "https://media.giphy.com/media/toXKzaJP3WIgM/giphy.gif"; // Partículas flotando
+  } else if (level.includes('Poco saludable')) {
+    return "https://media.giphy.com/media/kEuaRuXBVLfTAcUb9v/giphy.gif"; // Polvo visible
+  } else if (level.includes('Muy dañino')) {
+    return "https://media.giphy.com/media/3o7TKzzMMNluisJTFe/giphy.gif"; // Polvo denso/smog
+  } else if (level.includes('Peligroso')) {
+    return "https://media.giphy.com/media/l0ExheuOUuXZ8F72g/giphy.gif"; // Tormenta de polvo/contaminación extrema
+  } else {
+    return "https://media.giphy.com/media/f6hnhHkks8bk4jwjh3/giphy.gif"; // GIF predeterminado
+  }
+}
+
+function getGifByPM25Level(level) {
+  if (level.includes('Bueno')) {
+    return "https://media.giphy.com/media/3o7TKEKj0pMjzs7Fv2/giphy.gif"; // Respiración normal
+  } else if (level.includes('Moderado')) {
+    return "https://media.giphy.com/media/kHZVpxPHv5Rkk/giphy.gif"; // Leve irritación
+  } else if (level.includes('Poco saludable')) {
+    return "https://media.giphy.com/media/l2JJvKbgIEsD55EZi/giphy.gif"; // Problema respiratorio
+  } else if (level.includes('Muy dañino')) {
+    return "https://media.giphy.com/media/eK12uCsrAh4wmTXejp/giphy.gif"; // Efectos graves respiratorios
+  } else if (level.includes('Peligroso')) {
+    return "https://media.giphy.com/media/gj4ZUnOLg0Us4p5jft/giphy.gif"; // Mascarilla/protección extrema
+  } else {
+    return "https://media.giphy.com/media/3o7TKsQGzYHxz5OfAA/giphy.gif"; // GIF predeterminado
+  }
+}
+
     addressPoints.forEach((point) => {
         if (point.latitude && point.longitude && things.value.length > 2) {
             const thingHumidity = things.value[0] || { name: 'Desconocido', last_value: 'N/A' };
@@ -102,44 +164,94 @@ onMounted(async () => {
             return Object.values(levels).flat().find(l => l.color === b).max - 
                    Object.values(levels).flat().find(l => l.color === a).max;
         })[0];
-        const popupContent = `
-    <div style="
-        color: #000; 
-        padding: 15px; 
-        border-radius: 10px; 
-        text-align: center;
-        font-weight: bold;
-    ">
-        <h3 style="margin: 0 0 10px;">Niveles de Contaminación</h3>
-        <p style="font-size: 1.2em; background-color: ${co2Level.color}; padding: 5px; border-radius: 5px;">
-            CO2: ${co2Value} ppm — ${co2Level.label}
-        </p>
-        <p style="font-size: 1.2em; background-color: ${pm10Level.color}; padding: 5px; border-radius: 5px;">
-            PM10: ${pm10Value} µg/m³ — ${pm10Level.label}
-        </p>
-        <p style="font-size: 1.2em; background-color: ${pm25Level.color}; padding: 5px; border-radius: 5px;">
-            PM2.5: ${pm25Value} µg/m³ — ${pm25Level.label}
-        </p>
-        <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNTNybzU1cmF0cTY3Y3J6Ym5zZm5heWZyM2IwdmoxNG42eWxkbDVhbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Hkya3YFcXcmQ0/giphy.gif" width="120px" alt="Nivel de CO2">
-    </div>
-`;
 
+         // Crear el botón manualmente
+  const button = document.createElement("button");
+  button.textContent = "Abrir Modal";
+  button.style.cssText = `
+    background-color: #3b82f6; 
+    color: white; 
+    padding: 10px 20px; 
+    border-radius: 5px; 
+    border: none; 
+    cursor: pointer;
+    margin-top: 10px;
+  `;
 
-
-            const marker = L.marker([point.latitude, point.longitude], { icon: myIcon })
-                .bindPopup(popupContent);
-                
-            markers.addLayer(marker);
-        }
-    });
-
-    initialMap.value.addLayer(markers);
-
-    if (markers.getLayers().length > 0) {
-        initialMap.value.fitBounds(markers.getBounds());
-    }
+  // Agregar el evento al botón para abrir el modal
+  button.addEventListener("click", () => {
+  openModal(ModalComponent);
 });
 
+  // Crear el contenido del popup
+  const popupDiv = document.createElement("div");
+         popupDiv.innerHTML =`
+<div style="color: #000; background-color: white; padding: 20px; border-radius: 10px; text-align: center; font-weight: bold; width: auto; max-width: 900px; margin: 0 auto; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <h3 style="margin: 0 0 15px; font-size: 1.5em;">Niveles de Contaminación</h3>
+    
+    <!-- Contenedor con columnas verticales -->
+    <div style="display: flex; flex-direction: row; justify-content: space-between; text-align: center; color: #000;">
+        
+        <!-- Columna CO2 -->
+        <div style="flex: 1; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+            <p style="font-size: 1.1em; background-color: ${co2Level.color}; padding: 8px; border-radius: 8px; width: 100%; margin-bottom: 15px;">
+                CO2: ${co2Value} ppm — ${co2Level.label}
+            </p>
+            <div style="width: 100%; text-align: center; padding: 0 5px;">
+                <img src="${getGifByCO2Level(co2Level.label)}" style="width: 150px; max-width: 100%; height: auto; border-radius: 8px;" alt="Nivel de CO2">
+            </div>
+        </div>
+        
+        <!-- Columna PM10 -->
+        <div style="flex: 1; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+            <p style="font-size: 1.1em; background-color: ${pm10Level.color}; padding: 8px; border-radius: 8px; width: 100%; margin-bottom: 15px;">
+                PM10: ${pm10Value} µg/m³ — ${pm10Level.label}
+            </p>
+            <div style="width: 100%; text-align: center; padding: 0 5px;">
+                <img src="${getGifByPM10Level(pm10Level.label)}" style="width: 150px; max-width: 100%; height: auto; border-radius: 8px;" alt="Nivel de PM10">
+            </div>
+        </div>
+        
+        <!-- Columna PM2.5 -->
+        <div style="flex: 1; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+            <p style="font-size: 1.1em; background-color: ${pm25Level.color}; padding: 8px; border-radius: 8px; width: 100%; margin-bottom: 15px;">
+                PM2.5: ${pm25Value} µg/m³ — ${pm25Level.label}
+            </p>
+            <div style="width: 100%; text-align: center; padding: 0 5px;">
+                <img src="${getGifByPM25Level(pm25Level.label)}" style="width: 150px; max-width: 100%; height: auto; border-radius: 8px;" alt="Nivel de PM2.5">
+            </div>
+        </div>
+        
+    </div>
+</div>
+`;
+
+                // Add button to popup
+                popupDiv.appendChild(button);
+
+                // Replace popup content with new dynamic div
+                const popupContainer = document.getElementById("popup-container");
+                if (popupContainer) {
+                    popupContainer.innerHTML = "";
+                    popupContainer.appendChild(popupDiv);
+                }
+
+                // Create marker and add to cluster
+                const marker = L.marker([point.latitude, point.longitude], { icon: myIcon })
+                    .bindPopup(popupDiv);
+                    
+                markers.addLayer(marker);
+            }
+        });
+
+        // Add marker cluster to map
+        initialMap.value.addLayer(markers);
+
+        // Fit map to markers if any exist
+        if (markers.getLayers().length > 0) {
+            initialMap.value.fitBounds(markers.getBounds());
+        }
+    });
     // Añadir marcadores con datos dinámicos
 
 
@@ -178,7 +290,8 @@ onMounted(async () => {
       </div>
   
       <div id="map" ref="mapContainer" style="height: 515px;"></div>
-  
+      <ModalComponent v-if="isModalOpen" @close="closeModal" />
+
       <BarraInform class="bg-red-500 text-white" />  
   </template>
   
@@ -218,5 +331,22 @@ html, body {
   display: flex;
   flex-direction: column;
 }
+#popup-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+}
 
+.contenedor-principal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
 </style>
