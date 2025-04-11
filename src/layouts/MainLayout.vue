@@ -3,7 +3,7 @@
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import BarraInform from '@/components/BarraInform.vue';
 import { getThings } from '@/services/arduinoService';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import "leaflet/dist/leaflet.css";
 import * as L from 'leaflet';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -44,6 +44,7 @@ const myIcon = L.icon({
 });
 
 onMounted(async () => {
+
     if (!mapContainer.value) return;
 
   // Inicializa el mapa
@@ -56,16 +57,16 @@ onMounted(async () => {
   }).setView([-12.10057710407106, -76.98658195437011], 15);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
+        maxZoom: 15,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(initialMap.value);
 
     // Obtener datos desde Arduino IoT
     try {
         things.value = await getThings();
-        console.log('Things:', things.value);
+        console.log('Datos obtenidos:', things.value);
     } catch (error) {
-        console.error('Error al cargar las Things:', error);
+        console.error('Error al obtener datos:', error);
     }
     initialMap.value.whenReady(async () => {    
     const markers = L.markerClusterGroup();
@@ -73,9 +74,10 @@ onMounted(async () => {
     const levels = {
     co2: [
         { max: 400, color: '#00FF00', label: 'Bajo (Excelente)' }, 
-        { max: 1000, color: '#FFFF00', label: 'Moderado' }, 
-        { max: 2000, color: '#FFA500', label: 'Alto (Precaución)' }, 
-        { max: 5000, color: '#FF4500', label: 'Muy alto (Peligro)' }, 
+        { max: 1000, color: '#00FF00', label: 'Bueno' }, 
+        { max: 1500, color: '#FFA200', label: 'Somnolencia' }, 
+        { max: 2000, color: '#FFA500', label: 'Alto (Fatiga)' }, 
+        { max: 5000, color: '#FF4500', label: 'Muy alto (Mareos)' }, 
         { max: Infinity, color: '#8B0000', label: 'Extremo (Emergencia)' }
     ],
     pm10: [
@@ -92,54 +94,56 @@ onMounted(async () => {
         { max: 250, color: '#FF4500', label: 'Muy dañino' }, 
         { max: Infinity, color: '#8B0000', label: 'Peligroso' }
     ]
-};
-function getGifByCO2Level(level) {
-  if (level.includes('Bajo (Excelente)')) {
-    return "https://media.giphy.com/media/l0MYSvPXN9StPGx4k/giphy.gif"; // Bosque verde/naturaleza saludable
-  } else if (level.includes('Moderado')) {
-    return "https://media.giphy.com/media/JoV2BiMWVZ96taSewG/giphy.gif"; // Ciudad con algo de contaminación
-  } else if (level.includes('Alto') || level.includes('Precaución')) {
-    return "https://media.giphy.com/media/3o7TKsQzRs1VWXuG3u/giphy.gif"; // Smog industrial
-  } else if (level.includes('Muy alto') || level.includes('Peligro')) {
-    return "https://media.giphy.com/media/xT0GqH01ZyKwd3aT3G/giphy.gif"; // Contaminación severa
-  } else if (level.includes('Extremo') || level.includes('Emergencia')) {
-    return "https://media.giphy.com/media/3o7aD4GrHwn8vsGBTa/giphy.gif"; // Emergencia/evacuación
-  } else {
-    return "https://media.giphy.com/media/Hkya3YFcXcmQ0/giphy.gif"; // GIF predeterminado
-  }
-}
+    };
+    function getGifByCO2Level(level) {
+      if (level.includes('Bajo (Excelente)')) {
+        return "https://media.giphy.com/media/qXFLhFCzhUTPxNz91f/giphy.gif?cid=ecf05e47c7omy75yefgv44996by7tjda35dbrflv1q2iude6&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Bosque verde/naturaleza saludable
+      } else if (level.includes('Bueno')) {
+        return "https://media.giphy.com/media/qXFLhFCzhUTPxNz91f/giphy.gif?cid=ecf05e47c7omy75yefgv44996by7tjda35dbrflv1q2iude6&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Ciudad con algo de contaminación
+      }else if (level.includes('Somnolencia')) {
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnExancyd2xsZWNzcm03eXI2amNnd21ua3Q0NzZ2OWpyamNwbGFzNSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l378aiPPFAGEsetIk/giphy.gif"; // Ciudad con algo de contaminación
+      } else if (level.includes('Alto (Fatiga)')) {
+        return "https://media.giphy.com/media/r7iUygqqlRe6vpFEIw/giphy.gif?cid=790b76112mzqscgyf9xtqyd3nlht4d6611tzc03jtkv577cz&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Smog industrial
+      } else if (level.includes('Muy alto (Mareos)')) {
+        return "https://media.giphy.com/media/hUKYX9XcTmGDVn5TP0/giphy.gif?cid=790b7611pcuy2ia8jekfbf1yogbtlejxqtbpxfjlrbkof4p2&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Contaminación severa
+      } else if (level.includes('Extremo (Emergencia)')) {
+        return "https://media.giphy.com/media/iApH5a3k1sYvu/giphy.gif?cid=790b7611bo7g6aqu11aio0ykzyw3wk08l01lpqgim9zzag7m&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Emergencia/evacuación
+      } else {
+        return "https://media.giphy.com/media/Hkya3YFcXcmQ0/giphy.gif"; // GIF predeterminado
+      }
+    }
 
-function getGifByPM10Level(level) {
-  if (level.includes('Bueno')) {
-    return "https://media.giphy.com/media/3ohzdJVOJsJR3nN0zK/giphy.gif"; // Aire limpio
-  } else if (level.includes('Moderado')) {
-    return "https://media.giphy.com/media/toXKzaJP3WIgM/giphy.gif"; // Partículas flotando
-  } else if (level.includes('Poco saludable')) {
-    return "https://media.giphy.com/media/kEuaRuXBVLfTAcUb9v/giphy.gif"; // Polvo visible
-  } else if (level.includes('Muy dañino')) {
-    return "https://media.giphy.com/media/3o7TKzzMMNluisJTFe/giphy.gif"; // Polvo denso/smog
-  } else if (level.includes('Peligroso')) {
-    return "https://media.giphy.com/media/l0ExheuOUuXZ8F72g/giphy.gif"; // Tormenta de polvo/contaminación extrema
-  } else {
-    return "https://media.giphy.com/media/f6hnhHkks8bk4jwjh3/giphy.gif"; // GIF predeterminado
-  }
-}
+    function getGifByPM10Level(level) {
+      if (level.includes('Bueno')) {
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXAzb3dnbm9wd2djZnAzaDloYzZiY2hrbDJ3dnYyNzVrMnpqMTY2biZlcD12MV9naWZzX3NlYXJjaCZjdD1n/jI77q8Mc5yOs5wncJe/giphy.gif"; // Aire limpio
+      } else if (level.includes('Moderado')) {
+        return "https://media.giphy.com/media/d2Z7keyUwp4rzuG4/giphy.gif?cid=790b7611hsul7000y5ur12tzz7u7hga81sm6mvttlejcpdgm&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Partículas flotando
+      } else if (level.includes('Poco saludable')) {
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGxiejVteTk4ZGl1NGJxZ3hxYjNjeDNsM2o5aTZpY3RxbzQ4MXV1YSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/KchY32GLJK05JNktDq/giphy.gif"; // Polvo visible
+      } else if (level.includes('Muy dañino')) {
+        return "https://media.giphy.com/media/j7wBU7aHcKf7y/giphy.gif?cid=ecf05e470ermngvkjz9dmj0ect5zz18kph0tsf0ivrtgky8i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Polvo denso/smog
+      } else if (level.includes('Peligroso')) {
+        return "https://media.giphy.com/media/I4G0jcOtIyagIT8Ory/giphy.gif?cid=ecf05e47t397pyufysrgndiz7m0c1727immo78tg3vurrt0i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Tormenta de polvo/contaminación extrema
+      } else {
+        return "https://media.giphy.com/media/f6hnhHkks8bk4jwjh3/giphy.gif"; // GIF predeterminado
+      }
+    }
 
-function getGifByPM25Level(level) {
-  if (level.includes('Bueno')) {
-    return "https://media.giphy.com/media/3o7TKEKj0pMjzs7Fv2/giphy.gif"; // Respiración normal
-  } else if (level.includes('Moderado')) {
-    return "https://media.giphy.com/media/kHZVpxPHv5Rkk/giphy.gif"; // Leve irritación
-  } else if (level.includes('Poco saludable')) {
-    return "https://media.giphy.com/media/l2JJvKbgIEsD55EZi/giphy.gif"; // Problema respiratorio
-  } else if (level.includes('Muy dañino')) {
-    return "https://media.giphy.com/media/eK12uCsrAh4wmTXejp/giphy.gif"; // Efectos graves respiratorios
-  } else if (level.includes('Peligroso')) {
-    return "https://media.giphy.com/media/gj4ZUnOLg0Us4p5jft/giphy.gif"; // Mascarilla/protección extrema
-  } else {
-    return "https://media.giphy.com/media/3o7TKsQGzYHxz5OfAA/giphy.gif"; // GIF predeterminado
-  }
-}
+    function getGifByPM25Level(level) {
+      if (level.includes('Bueno')) {
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXAzb3dnbm9wd2djZnAzaDloYzZiY2hrbDJ3dnYyNzVrMnpqMTY2biZlcD12MV9naWZzX3NlYXJjaCZjdD1n/jI77q8Mc5yOs5wncJe/giphy.gif"; // Respiración normal
+      } else if (level.includes('Moderado')) {
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWVjcnAxc2F0bXp4YXF5cWFxN252cW9sZ2pmOXFkYTdwNmJmZ3hwcSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/vVHbd6Xj1kBtc3FAio/giphy.gif"; // Leve irritación
+      } else if (level.includes('Poco saludable')) {
+        return "https://media.giphy.com/media/pMMbIx8KqBfVPip6xV/giphy.gif?cid=790b7611gzzlyv7dv144zffdjw0801z23eyfsxp3urugg1tw&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Problema respiratorio
+      } else if (level.includes('Muy dañino')) {
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGVvMXFhdnFncTRzZXBtaHBsN2VjaDBkeDY3d3A0N2lneGduaDBsaiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Rm2iJHrOmNysyBCpF5/giphy.gif"; // Efectos graves respiratorios
+      } else if (level.includes('Peligroso')) {
+        return "https://media.giphy.com/media/I4G0jcOtIyagIT8Ory/giphy.gif?cid=ecf05e47t397pyufysrgndiz7m0c1727immo78tg3vurrt0i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Mascarilla/protección extrema
+      } else {
+        return "https://media.giphy.com/media/3o7TKsQGzYHxz5OfAA/giphy.gif"; // GIF predeterminado
+      }
+    }
 
     addressPoints.forEach((point) => {
         if (point.latitude && point.longitude && things.value.length > 2) {
@@ -149,7 +153,7 @@ function getGifByPM25Level(level) {
             const thingPM10 = things.value[3] || { name: 'Desconocido', last_value: 'N/A' };
             const thingPM1_0 = things.value[4] || { name: 'Desconocido', last_value: 'N/A' };
             const thingPM25 = things.value[5] || { name: 'Desconocido', last_value: 'N/A' };
-
+            console.log('FIN POR',things.value[2])
            
         const co2Value = parseFloat(thingCO2.last_value) || 0;
         const pm10Value = parseFloat(thingPM10.last_value) || 0;
@@ -280,12 +284,7 @@ function getGifByPM25Level(level) {
 <template>
       <div>
         <HeaderComponent @toggleDrawer="toggleDrawer" />
-        <h1>Arduino Things</h1>
-        <ul>
-          <li v-for="thing in things" :key="thing.last_value">
-            {{ thing.name }} (Valor: {{ thing.last_value }})
-          </li>
-        </ul>
+        <h1>Arduino CLOUD</h1>
       </div>
   
       <div id="map" ref="mapContainer" style="height: 515px;"></div>

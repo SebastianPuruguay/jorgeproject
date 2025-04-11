@@ -4,7 +4,7 @@
       <button class="menu-btn" @click="$emit('toggleDrawer')">
         ☰
       </button>
-      <h1 class="title">Mi Proyecto</h1>
+      <h1 class="title">Moniterio de caldidad de Aire</h1>
     </div>
   </header>
 </template>

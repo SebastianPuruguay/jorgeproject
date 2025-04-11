@@ -3,8 +3,10 @@
     <div class="container">
       <!-- Logo y Nombre -->
       <div class="logo-section">
-        <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
-        <span class="name">Nombre de la Persona</span>
+        <img src="@/assets/jorge1.jpg" alt="Logo" class="logo">
+
+        <span class="name">Jorge Valerio Araoz
+        </span>
       </div>
 
       <!-- Enlaces -->

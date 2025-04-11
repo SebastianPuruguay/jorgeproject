@@ -4,7 +4,7 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h2 >
-  Información Detallada - FabLab ESAN - 21/03/2025
+  Información Detallada - FabLab ESAN - 22/03/2025
                     </h2>
 
         <button class="close-button" @click="$emit('close')">&times;</button>
@@ -46,7 +46,7 @@
         </div>
       
       <div class="modal-footer">
-        <button class="download-button">Descargar Informe</button>
+        
         <button class="close-button-secondary" @click="$emit('close')">Cerrar</button>
       </div>
     </div>
