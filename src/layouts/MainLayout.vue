@@ -151,7 +151,6 @@ onMounted(async () => {
 
     addressPoints.forEach((point) => {
         if (point.latitude && point.longitude && things.value.length > 2) {
-            const thingHumidity = things.value[0] || { name: 'Desconocido', last_value: 'N/A' };
             const thingTemperature = things.value[1] || { name: 'Desconocido', last_value: 'N/A' };
             const thingCO2 = things.value[2] || { name: 'Desconocido', last_value: 'N/A' };
             const thingPM10 = things.value[3] || { name: 'Desconocido', last_value: 'N/A' };
