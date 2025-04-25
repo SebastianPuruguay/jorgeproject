@@ -14,6 +14,9 @@ import icon from '../components/icon.png';
 import markerShadow from '../components/marker-shadow.png';
 import ModalComponent from "@/pages/ModalMasInfo.vue";
 
+// pa que hable la pag
+
+
 const isModalOpen = ref(false);
 const selectedContaminationData = ref(null);
 // Estado para manejar qué modal está abierto
@@ -44,6 +47,7 @@ const myIcon = L.icon({
 });
 
 onMounted(async () => {
+
 
     if (!mapContainer.value) return;
 
@@ -153,11 +157,12 @@ onMounted(async () => {
             const thingPM10 = things.value[3] || { name: 'Desconocido', last_value: 'N/A' };
             const thingPM1_0 = things.value[4] || { name: 'Desconocido', last_value: 'N/A' };
             const thingPM25 = things.value[5] || { name: 'Desconocido', last_value: 'N/A' };
-            console.log('FIN POR',things.value[2])
-           
+            
+            
         const co2Value = parseFloat(thingCO2.last_value) || 0;
         const pm10Value = parseFloat(thingPM10.last_value) || 0;
         const pm25Value = parseFloat(thingPM25.last_value) || 0;
+
 
         const co2Level = levels.co2.find(l => co2Value <= l.max);
         const pm10Level = levels.pm10.find(l => pm10Value <= l.max);
@@ -170,65 +175,137 @@ onMounted(async () => {
         })[0];
 
          // Crear el botón manualmente
-  const button = document.createElement("button");
-  button.textContent = "+ Info";
-  button.style.cssText = `
-    background-color: #3b82f6; 
-    color: white; 
-    padding: 10px 20px; 
-    border-radius: 5px; 
-    border: none; 
-    cursor: pointer;
-    margin-top: 10px;
-  `;
+         const button = document.createElement("button");
+button.textContent = "+ Info";
+button.style.cssText = `
+  background-color: #2563eb; /* azul elegante */
+  color: white;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+`;
+button.onmouseover = () => button.style.backgroundColor = '#1d4ed8';
+button.onmouseout = () => button.style.backgroundColor = '#2563eb';
 
-  // Agregar el evento al botón para abrir el modal
-  button.addEventListener("click", () => {
+button.addEventListener("click", () => {
   openModal(ModalComponent);
 });
 
-  // Crear el contenido del popup
-  const popupDiv = document.createElement("div");
-         popupDiv.innerHTML =`
-<div style="color: #000; background-color: white; padding: 20px; border-radius: 10px; text-align: center; font-weight: bold; width: 500px; max-width: 900px; margin: 0 auto; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-    <h3 style="margin: 0 0 15px; font-size: 1.5em;">Niveles de Contaminación</h3>
-    
-    <!-- Contenedor con columnas verticales -->
-    <div style="display: flex; flex-direction: row; justify-content: space-between; text-align: center; color: #000;">
-        
-        <!-- Columna CO2 -->
-        <div style="flex: 1; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
-            <p style="font-size: 1.1em; background-color: ${co2Level.color}; padding: 8px; border-radius: 8px; width: 100%; margin-bottom: 15px;">
-                CO2: ${co2Value} ppm — ${co2Level.label}
-            </p>
-            <div style="width: 100%; text-align: center; padding: 0 5px;">
-                <img src="${getGifByCO2Level(co2Level.label)}" style="width: 150px; max-width: 100%; height: auto; border-radius: 8px;" alt="Nivel de CO2">
-            </div>
-        </div>
-        
-        <!-- Columna PM10 -->
-        <div style="flex: 1; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
-            <p style="font-size: 1.1em; background-color: ${pm10Level.color}; padding: 8px; border-radius: 8px; width: 100%; margin-bottom: 15px;">
-                PM10: ${pm10Value} µg/m³ — ${pm10Level.label}
-            </p>
-            <div style="width: 100%; text-align: center; padding: 0 5px;">
-                <img src="${getGifByPM10Level(pm10Level.label)}" style="width: 150px; max-width: 100%; height: auto; border-radius: 8px;" alt="Nivel de PM10">
-            </div>
-        </div>
-        
-        <!-- Columna PM2.5 -->
-        <div style="flex: 1; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
-            <p style="font-size: 1.1em; background-color: ${pm25Level.color}; padding: 8px; border-radius: 8px; width: 100%; margin-bottom: 15px;">
-                PM2.5: ${pm25Value} µg/m³ — ${pm25Level.label}
-            </p>
-            <div style="width: 100%; text-align: center; padding: 0 5px;">
-                <img src="${getGifByPM25Level(pm25Level.label)}" style="width: 150px; max-width: 100%; height: auto; border-radius: 8px;" alt="Nivel de PM2.5">
-            </div>
-        </div>
-        
+
+const popupDiv = document.createElement("div");
+popupDiv.innerHTML = `
+  <div style="
+    color: #111;
+    background: #fff;
+    padding: 20px;
+    border-radius: 14px;
+    max-width: 850px;
+    margin: 0 auto;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', sans-serif;
+  ">
+    <h3 style="font-size: 1.4rem; margin-bottom: 16px; text-align: center; color: #1e3a8a;">
+      🔍 Niveles de Contaminación
+    </h3>
+
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 12px;
+      flex-wrap: nowrap;
+    ">
+
+      <!-- Tarjeta CO2 -->
+      <div style="
+        flex: 1;
+        background: #f3f4f6;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+      ">
+        <p style="
+          background-color: ${co2Level.color};
+          color: black;
+          font-weight: 600;
+          padding: 6px 8px;
+          border-radius: 6px;
+          margin-bottom: 10px;
+          font-size: 0.85rem;
+        ">
+          CO2: ${co2Value} ppm — ${co2Level.label}
+        </p>
+        <img src="${getGifByCO2Level(co2Level.label)}" alt="Nivel de CO2"
+          style="width: 130px; height: auto; margin: 0 auto; border-radius: 6px;">
+      </div>
+
+      <!-- Tarjeta PM10 -->
+      <div style="
+        flex: 1;
+        background: #f3f4f6;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+      ">
+        <p style="
+          background-color: ${pm10Level.color};
+          color: black;
+          font-weight: 600;
+          padding: 6px 8px;
+          border-radius: 6px;
+          margin-bottom: 10px;
+          font-size: 0.85rem;
+        ">
+          PM10: ${pm10Value} µg/m³ — ${pm10Level.label}
+        </p>
+        <img src="${getGifByPM10Level(pm10Level.label)}" alt="Nivel de PM10"
+          style="width: 130px; height: auto; margin: 0 auto; border-radius: 6px;">
+      </div>
+
+      <!-- Tarjeta PM2.5 -->
+      <div style="
+        flex: 1;
+        background: #f3f4f6;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+      ">
+        <p style="
+          background-color: ${pm25Level.color};
+          color: black;
+          font-weight: 600;
+          padding: 6px 8px;
+          border-radius: 6px;
+          margin-bottom: 10px;
+          font-size: 0.85rem;
+        ">
+          PM2.5: ${pm25Value} µg/m³ — ${pm25Level.label}
+        </p>
+        <img src="${getGifByPM25Level(pm25Level.label)}" alt="Nivel de PM2.5"
+          style="width: 130px; height: auto; margin: 0 auto; border-radius: 6px;">
+      </div>
+
     </div>
-</div>
+  </div>
 `;
+
+
+
 
                 // Add button to popup
                 popupDiv.appendChild(button);
@@ -258,7 +335,49 @@ onMounted(async () => {
     // Añadir marcadores con datos dinámicos
 
 
-    
+    // Leyenda de temperatura y humedad (arriba a la derecha)
+const climateLegend = L.control({ position: 'topright' });
+
+climateLegend.onAdd = function () {
+  const thingHumidity = things.value[0] || { name: 'Desconocido', last_value: 'N/A' };
+            const thingTemperature = things.value[1] || { name: 'Desconocido', last_value: 'N/A' };
+
+            
+           
+  const HumidityValue = parseFloat(thingHumidity.last_value) || 0;
+  const TemperatureValue = parseFloat(thingTemperature.last_value) || 0;    
+
+  const div = L.DomUtil.create('div', 'info climate-legend');
+  const temp = Math.round((HumidityValue)) || "--";
+  const hum = Math.round((TemperatureValue)) || "--";
+
+  div.innerHTML = `
+    <div style="
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      min-width: 180px;
+    ">
+      <div style="font-weight: 600; font-size: 1rem; margin-bottom: 8px; color: #111;">
+        🌤️ Condiciones Ambientales
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.2rem;">🌡️</span>
+        <span style="color: #dc2626; font-weight: bold;"> ${hum} °C</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+        <span style="font-size: 1.2rem;">💧</span>
+        <span style="color: #2563eb; font-weight: bold;">${temp}%</span>
+      </div>
+    </div>
+  `;
+  return div;
+};
+
+climateLegend.addTo(initialMap.value);
+
 
     // Añadir leyenda de contaminación
     const legend = L.control({ position: 'bottomleft' });
@@ -282,18 +401,42 @@ onMounted(async () => {
 </script>
 
 <template>
-      <div>
-        <HeaderComponent @toggleDrawer="toggleDrawer" />
-        <h1>Arduino CLOUD</h1>
-      </div>
-  
-      <div id="map" ref="mapContainer" style="height: 515px;"></div>
-      <ModalComponent v-if="isModalOpen" @close="closeModal" />
+  <div>
+    <HeaderComponent @toggleDrawer="toggleDrawer" />
 
-      <BarraInform class="bg-red-500 text-white" />  
-  </template>
+    <!-- Encabezado estilizado -->
+    <div class="arduino-header">
+      <h1>Arduino Cloud</h1>
+    </div>
+
+    <div class="p-4"></div>
+  </div>
+
+  <div id="map" ref="mapContainer" style="height: 515px;"></div>
+  <ModalComponent v-if="isModalOpen" @close="closeModal" />
+  <BarraInform class="bg-red-500 text-white" />
+</template>
+
   
 <style>
+.arduino-header {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #615f5f, #121212);
+  padding: 24px 20px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.arduino-header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 .legend {
   background: white;
   padding: 10px;

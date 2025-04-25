@@ -1,133 +1,122 @@
 <template>
   <footer class="footer">
     <div class="container">
-      <!-- Logo y Nombre -->
+      <!-- Logo y nombre -->
       <div class="logo-section">
-        <img src="@/assets/jorge1.jpg" alt="Logo" class="logo">
-
-        <span class="name">Jorge Valerio Araoz
-        </span>
+        <img src="@/assets/jorge1.jpg" alt="Logo" class="logo" />
+        <span class="name">Jorge Valerio Araoz</span>
       </div>
 
-      <!-- Enlaces -->
+      <!-- Navegación -->
       <nav class="nav-links">
-        <ul>
-          <li><a href="/">Sobre mí</a></li>
-          <li><a href="/">Proyectos</a></li>
-          <li><a href="/">Contacto</a></li>
-          <li><a href="/">Términos</a></li>
-        </ul>
+        <a href="/">Sobre mí</a>
+        <a href="/">Proyectos</a>
+        <a href="/">Contacto</a>
+        <a href="/">Términos</a>
       </nav>
 
-      <!-- Redes Sociales -->
+      <!-- Redes -->
       <div class="social-links">
-        <a href="#"><i class="fab fa-facebook"></i></a>
-        <a href="#"><i class="fab fa-twitter"></i></a>
-        <a href="#"><i class="fab fa-instagram"></i></a>
-        <a href="#"><i class="fab fa-linkedin"></i></a>
+        <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
       </div>
     </div>
 
-    <!-- Línea Divisoria -->
-    <hr class="divider">
+    <hr class="divider" />
 
-    <!-- Derechos de Autor -->
     <div class="copyright">
-      &copy; {{ currentYear }} Nombre de la Persona. Todos los derechos reservados.
+      &copy; {{ currentYear }} Jorge Valerio Araoz. Todos los derechos reservados.
     </div>
   </footer>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-
-const currentYear = ref(new Date().getFullYear());
+import { ref } from 'vue'
+const currentYear = ref(new Date().getFullYear())
 </script>
 
 <style scoped>
-/* Fondo oscuro con gradiente */
 .footer {
-  
-  background: linear-gradient(135deg, #222, #111);
+  background: #111;
   color: white;
-  padding: 20px 10px;
+  padding: 30px 16px;
+  font-family: 'Segoe UI', sans-serif;
   text-align: center;
 }
 
-/* Contenedor principal */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
-/* Sección del logo */
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .logo {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.3);
+  object-fit: cover;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
 }
 
 .name {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f3f4f6;
 }
 
-/* Enlaces de navegación */
-.nav-links ul {
-  list-style: none;
+.nav-links {
   display: flex;
-  gap: 15px;
-  padding: 0;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .nav-links a {
   text-decoration: none;
-  color: white;
-  font-size: 1rem;
+  color: #d1d5db;
+  font-size: 0.95rem;
   transition: color 0.3s;
 }
 
 .nav-links a:hover {
-  color: #ffeb3b;
+  color: #facc15; /* amarillo suave */
 }
 
-/* Redes sociales */
 .social-links {
   display: flex;
-  gap: 15px;
+  gap: 18px;
 }
 
 .social-links a {
-  font-size: 1.5rem;
-  color: white;
-  transition: transform 0.3s;
+  font-size: 1.2rem;
+  color: #d1d5db;
+  transition: transform 0.3s, color 0.3s;
 }
 
 .social-links a:hover {
-  transform: scale(1.2);
+  transform: scale(1.15);
+  color: #60a5fa; /* azul claro al pasar el cursor */
 }
 
-/* Línea divisoria */
 .divider {
-  width: 80%;
+  width: 85%;
   border: 0;
   height: 1px;
   background: rgba(255, 255, 255, 0.2);
-  margin: 15px auto;
+  margin: 20px auto;
 }
 
-/* Derechos de autor */
 .copyright {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>
