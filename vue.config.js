@@ -1,6 +1,6 @@
 module.exports = {
   publicPath: process.env.NODE_ENV === 'production'
-    ? '/JORGEPROJECT/'  // Cambia 'jorgeproject' por el nombre correcto
+    ? '/jorgeproject/'  // Cambia 'jorgeproject' por el nombre correcto
     : '/',
   devServer: {
     proxy: {
