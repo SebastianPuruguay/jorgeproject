@@ -403,10 +403,7 @@ climateLegend.addTo(initialMap.value);
   <div>
     <HeaderComponent @toggleDrawer="toggleDrawer" />
 
-    <!-- Encabezado estilizado -->
-    <div class="arduino-header">
-      <h1>Arduino Cloud</h1>
-    </div>
+
 
     <div class="p-4"></div>
   </div>
