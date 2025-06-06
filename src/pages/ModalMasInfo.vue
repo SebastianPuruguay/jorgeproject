@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="modal-header">
         <h2>🧪 Información Detallada</h2>
-        <p class="subheader">FabLab ESAN · 2025</p>
+        <p class="subheader">{{ getLocationName(currentPointKey) }} · 2025</p>
         <button class="close-button" @click="$emit('close')">
           <span class="close-icon">&times;</span>
         </button>
@@ -18,106 +18,137 @@
           <h3 class="section-title">🔍 Información General</h3>
           <div class="cards-container">
             <div
-  v-for="(thing, key) in things"
-  :key="key"
-  class="contamination-card"
-  :style="{ backgroundColor: getColor(thing.name, thing.last_value) }"
->
-
+              v-for="(value, key) in filteredData"
+              :key="key"
+              class="contamination-card"
+              :style="{ backgroundColor: getColor(key, value) }"
+            >
               <div class="card-content">
                 <div class="card-info">
-                  <h4 class="card-title">{{ thing.name }}</h4>
+                  <h4 class="card-title">{{ getDisplayName(key) }}</h4>
                   <p class="value">
-  {{ Math.round(thing.last_value) }}
-  <span class="unit">{{ measurementUnits[thing.name] }}</span>
-</p>
-
+                    {{ Math.round(value) }}
+                    <span class="unit">{{ measurementUnits[getDisplayName(key)] }}</span>
+                  </p>
                 </div>
-                <button class="action-button" @click="hablarNivel(thing)" title="Escuchar nivel">
-  <i>🔊</i>
-</button>
-
+                <button class="speak-button2" @click="hablarNivel(key, value)" title="Escuchar nivel">
+                  🔊
+                </button>
               </div>
             </div>
           </div>
         </section>
 
+        <!-- Timestamp -->
+      <section class="timestamp-section" v-if="formattedTimestamp">
+        <p class="timestamp">📅 Última actualización: {{ formattedTimestamp }}</p>
+      </section>
+
+
         <!-- Recomendaciones -->
         <section class="recommendations">
-  <h3 class="section-title">📌 Recomendaciones</h3>
-  <div class="recommendations-container">
+          <h3 class="section-title">📌 Recomendaciones</h3>
+          <div class="recommendations-container">
 
-    <!-- 🔴 Evacuación -->
-    <div v-if="shouldEvacuate" class="recommendation-item evacuate">
-      <div class="recommendation-icon">🚨</div>
-      <div class="recommendation-text">
-        <div class="header-row">
-          <strong>Evacuación recomendada</strong>
-          <button @click="leerRecomendacion('evacuacion')" class="speak-button" title="Escuchar recomendación">🔊</button>
-        </div>
-        <p>La calidad del aire ha alcanzado niveles peligrosos:</p>
-        <ul>
-          <li>CO₂ actual: {{ co2 }} ppm</li>
-          <li>PM1.0: {{ pm1_0 }}, PM2.5: {{ pm2_5 }}, PM10: {{ pm10 }} µg/m³</li>
-        </ul>
-        <p>Se recomienda evacuar el área si es posible, especialmente si hay personas con enfermedades respiratorias, niños o adultos mayores. Si debe permanecer, use mascarilla con filtro.</p>
-      </div>
-    </div>
+            <!-- 🔴 Ambiente no saludable -->
+            <div v-if="shouldEvacuate" class="recommendation-item evacuate">
+              <div class="recommendation-icon">🚨</div>
+                <div class="recommendation-text">
+                <div class="header-row">
+                <strong>Ambiente no saludable</strong>
+                <button @click="leerRecomendacion('evacuacion')" class="speak-button" title="Escuchar recomendación">🔊</button>
+                </div>
+              <p>La calidad del aire es baja en este momento:</p>
+              <ul>
+              <li>CO₂ actual: {{ co2 }} ppm</li>
+              <li>PM2.5: {{ pm2_5 }}, PM10: {{ pm10 }} µg/m³</li>
+              </ul>
+              <p>Se recomienda salir del área si se puede, especialmente si hay niños, adultos mayores o personas con asma. Si necesitas quedarte, usar mascarilla puede ayudar.</p>
+              </div>
+                          <img
+            src="@/assets/mascarilla.png"
+            alt="Evacuación recomendada"
+            class="image-alert"
+            />
+            </div>
 
-    <!-- 🟠 Limitación de actividad -->
-    <div v-else-if="shouldLimitActivities" class="recommendation-item caution">
-      <div class="recommendation-icon">⚠️</div>
-      <div class="recommendation-text">
-        <div class="header-row">
-          <strong>Reduzca actividades físicas</strong>
-          <button @click="leerRecomendacion('limitacion')" class="speak-button" title="Escuchar recomendación">🔊</button>
-        </div>
-        <p>Los niveles de contaminación son elevados, lo cual puede afectar la salud si se realizan esfuerzos físicos.</p>
-        <ul>
-          <li>CO₂ actual: {{ co2 }} ppm</li>
-          <li>PMs: {{ pm1_0 }}, {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
-        </ul>
-        <p>Evite hacer ejercicio o moverse en exceso en este lugar. Si tiene síntomas respiratorios, busque zonas mejor ventiladas.</p>
-      </div>
-    </div>
 
-    <!-- 🟡 Ventilación -->
-    <div v-else-if="shouldVentilate" class="recommendation-item ventilate">
-      <div class="recommendation-icon">🪟</div>
-      <div class="recommendation-text">
-        <div class="header-row">
-          <strong>Requiere ventilación</strong>
-          <button @click="leerRecomendacion('ventilar')" class="speak-button" title="Escuchar recomendación">🔊</button>
-        </div>
-        <p>El aire está viciado y podría acumular dióxido de carbono o partículas finas.</p>
-        <ul>
-          <li>CO₂ actual: {{ co2 }} ppm</li>
-          <li>PMs: {{ pm1_0 }}, {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
-        </ul>
-        <p>Abra ventanas o use ventiladores para mejorar la circulación del aire. Esto ayudará a reducir los riesgos para la salud.</p>
-      </div>
-    </div>
 
-    <!-- 🟢 Óptimo -->
-    <div v-if="isOptimal" class="recommendation-item optimal">
-      <div class="recommendation-icon">✅</div>
-      <div class="recommendation-text">
-        <div class="header-row">
-          <strong>Ambiente óptimo</strong>
-          <button @click="leerRecomendacion('optimo')" class="speak-button" title="Escuchar recomendación">🔊</button>
-        </div>
-        <p>La calidad del aire es saludable:</p>
-        <ul>
-          <li>CO₂: {{ co2 }} ppm</li>
-          <li>PMs: {{ pm1_0 }}, {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
-        </ul>
-        <p>No hay restricciones para permanecer o realizar actividades físicas. Disfrute del espacio con tranquilidad.</p>
-      </div>
-    </div>
+            <!-- 🟠 Evita esfuerzos físicos -->
+            <div v-else-if="shouldLimitActivities" class="recommendation-item caution">
+            <div class="recommendation-icon">⚠️</div>
+            <div class="recommendation-text">
+            <div class="header-row">
+            <strong>Evita esfuerzos físicos</strong>
+            <button @click="leerRecomendacion('limitacion')" class="speak-button" title="Escuchar recomendación">🔊</button>
+            </div>
+            <p>El aire no está en su mejor momento, especialmente para actividades físicas intensas.</p>
+            <ul>
+            <li>CO₂ actual: {{ co2 }} ppm</li>
+            <li>PMs: {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
+            </ul>
+            <p>Evita hacer ejercicios o correr aquí por ahora. Si sientes molestias, muévete a un lugar con mejor ventilación.</p>
+            </div>
+                        <img
+            src="@/assets/noejericico.jpg"
+            alt="Evacuación recomendada"
+            class="image-alert"
+            />
+            </div>
 
-  </div>
-</section>
 
+
+            <!-- 🟡 Mejorar circulación -->
+            <div v-else-if="shouldVentilate" class="recommendation-item ventilate">
+            <div class="recommendation-icon">🪟</div>
+            <div class="recommendation-text">
+            <div class="header-row">
+            <strong>Mejorar circulación de aire</strong>
+            <button @click="leerRecomendacion('ventilar')" class="speak-button" title="Escuchar recomendación">🔊</button>
+            </div>
+
+            <p>El ambiente está algo cargado. Una buena ventilación puede marcar la diferencia.</p>
+            <ul>
+            <li>CO₂ actual: {{ co2 }} ppm</li>
+            <li>PMs: {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
+            </ul>
+            <p>Abre ventanas o usa ventiladores para renovar el aire y sentirte mejor.</p>
+            </div>
+            <!-- Imagen al lado derecho -->
+            <img
+            src="@/assets/ventilar.png"
+            alt="Evacuación recomendada"
+            class="image-alert"
+            />
+            </div>
+
+
+
+            <!-- 🟢 Aire saludable -->
+            <div v-if="isOptimal" class="recommendation-item optimal">
+            <div class="recommendation-icon">✅</div>
+            <div class="recommendation-text">
+            <div class="header-row">
+            <strong>Aire saludable</strong>
+            <button @click="leerRecomendacion('optimo')" class="speak-button" title="Escuchar recomendación">🔊</button>
+            </div>
+            <p>¡Todo bien! El aire se encuentra en buen estado:</p>
+            <ul>
+            <li>CO₂: {{ co2 }} ppm</li>
+            <li>PMs: {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
+            </ul>
+            <p>Disfruta del espacio con tranquilidad. Es un buen momento para actividades al aire libre.</p>
+            </div>
+                        <img
+            src="@/assets/calidadOptima.jpg"
+            alt="Evacuación recomendada"
+            class="image-alert"
+            />  
+            </div>
+
+
+          </div>
+        </section>
 
       </div>
 
@@ -129,10 +160,8 @@
   </div>
 </template>
 
-
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
-import { getThings } from '@/services/arduinoService';
+import { ref, computed, watch, inject } from 'vue';
 
 // 🔸 Props
 const props = defineProps({
@@ -143,49 +172,84 @@ const props = defineProps({
       Humidity: "%",
       CO2: "ppm",
       PM10: "µg/m³",
-      PM1_0: "µg/m³",
       PM2_5: "µg/m³"
     })
   }
 });
 
+const emit = defineEmits(['close']);
 
-const emit = defineEmits(['close', 'show-details']);
+// 🔸 Inyectar datos globales (asumiendo que los tienes disponibles globalmente)
+// Si no los tienes así, puedes pasarlos como props también
+const datosCalidadAire = inject('datosCalidadAire', ref({}));
+const currentPointKey = inject('currentPointKey', ref('airedatos')); // El key del punto actual
 
-// 🔸 Data
-const things = ref([]);
+// 🔸 Mapeo de nombres de ubicación
+const locationNames = {
+  "airedatos": "Lima - San Juan de Lurigancho - Sede Canto Rey",
+  "airedatosSRCO": "Lima - Surco - Sede FabLab Esan", 
+};
 
-// 🔸 Ciclo de vida: cargar datos al montar
-onMounted(async () => {
-  try {
-    const data = await getThings();
-    things.value = Array.isArray(data) ? data : [];
-    console.log('✅ Datos cargados en things:', things.value);
-  } catch (error) {
-    console.error('❌ Error al cargar things:', error);
-    things.value = [];
-  }
+// 🔸 Mapeo de nombres de sensores  
+const sensorNameMap = {
+  "CO2": "CO2",
+  "Temp": "Temperatura", 
+  "Hum": "Humedad",
+  "PM2_5": "PM2.5", 
+  "PM10": "PM10"
+};
+
+// 🔸 Computed para datos actuales
+const currentData = computed(() => {
+  return datosCalidadAire.value[currentPointKey.value] || {};
 });
 
-// 🔸 Watch para depurar cambios en things
-watch(things, (newVal) => {
-  console.log('📌 Nuevo valor de things:', newVal);
+// 🔸 Datos filtrados (excluir timestamp para las cards)
+const filteredData = computed(() => {
+  const data = { ...currentData.value };
+  delete data.timestamp;
+  delete data.PM1_0; // Excluir timestamp
+  return data;
 });
 
-// 🔸 Obtener valores por nombre
-const getValueByName = (name) =>
-  things.value?.find(thing => thing.name === name)?.last_value ?? null;
+// 🔸 Watch para depurar
+watch([currentData, currentPointKey], ([newData, newKey]) => {
+  console.log('📌 Datos actuales del modal:', newData);
+  console.log('📍 Punto actual:', newKey);
+});
+// 🔸 Obtener valores específicos con parseFloat
+const co2 = computed(() => {
+  const value = currentData.value.CO2;
+  return value ? parseFloat(value) : null;
+});
+const timestamp = computed(() => {
+  const value = localStorage.getItem("ultima actualizacion");
+  if (!value) return null;
 
-const co2 = computed(() => getValueByName("CO2"));
-const pm1_0 = computed(() => getValueByName("PM1_0"));
-const pm2_5 = computed(() => getValueByName("PM2_5"));
-const pm10 = computed(() => getValueByName("PM10"));
+
+  console.log('Timestamp:', value);
+  // Validar que sea una fecha válida
+  return value;
+  
+});
+
+
+
+const pm2_5 = computed(() => {
+  const value = currentData.value.PM2_5;
+  return value ? parseFloat(value) : null;
+});
+
+const pm10 = computed(() => {
+  const value = currentData.value.PM10;
+  return value ? parseFloat(value) : null;
+});
+
 
 // 🔸 Lógica ambiental
 const shouldVentilate = computed(() => {
   return (
     (co2.value !== null && co2.value > 1000) ||
-    (pm1_0.value !== null && pm1_0.value > 50) ||
     (pm2_5.value !== null && pm2_5.value > 50) ||
     (pm10.value !== null && pm10.value > 50)
   );
@@ -194,7 +258,6 @@ const shouldVentilate = computed(() => {
 const shouldLimitActivities = computed(() => {
   return (
     (co2.value !== null && co2.value > 1500) ||
-    (pm1_0.value !== null && pm1_0.value > 100) ||
     (pm2_5.value !== null && pm2_5.value > 100) ||
     (pm10.value !== null && pm10.value > 100)
   );
@@ -203,7 +266,6 @@ const shouldLimitActivities = computed(() => {
 const shouldEvacuate = computed(() => {
   return (
     (co2.value !== null && co2.value > 2000) ||
-    (pm1_0.value !== null && pm1_0.value > 150) ||
     (pm2_5.value !== null && pm2_5.value > 150) ||
     (pm10.value !== null && pm10.value > 150)
   );
@@ -212,7 +274,8 @@ const shouldEvacuate = computed(() => {
 const isOptimal = computed(() => {
   return !shouldVentilate.value && !shouldLimitActivities.value && !shouldEvacuate.value;
 });
-//Color de modales de contaminación
+
+// 🔸 Configuración de niveles de colores (igual que en tu mapa)
 const levels = {
   co2: [
     { max: 400, color: '#00FF00', label: 'Bajo (Excelente)' },
@@ -235,94 +298,135 @@ const levels = {
     { max: 150, color: '#FFA500', label: 'Poco saludable' },
     { max: 250, color: '#FF4500', label: 'Muy dañino' },
     { max: Infinity, color: '#8B0000', label: 'Peligroso' }
+  ],
+  pm1_0: [
+    { max: 30, color: '#00FF00', label: 'Bueno' },
+    { max: 60, color: '#FFFF00', label: 'Moderado' },
+    { max: 150, color: '#FFA500', label: 'Poco saludable' },
+    { max: 250, color: '#FF4500', label: 'Muy dañino' },
+    { max: Infinity, color: '#8B0000', label: 'Peligroso' }
   ]
 };
 
-const getColor = (name, value) => {
-  if (!value || !name) return '#f3f4f6'; // fondo por defecto
-  const key = name.toLowerCase().replace('_', ''); // ej: PM2_5 -> pm25
-  const grupo = levels[key];
-  if (!grupo) return '#e5e7eb';
-
-  return grupo.find(l => value <= l.max)?.color || '#f3f4f6';
+// 🔸 Métodos auxiliares
+const getLocationName = (key) => {
+  return locationNames[key] || key;
 };
 
-// 🔸 Métodos
+const getDisplayName = (key) => {
+  return sensorNameMap[key] || key;
+};
+
+const formattedTimestamp = computed(() => {
+  return timestamp.value
+    ? timestamp.value.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : '';
+});
+
+const getColor = (key, value) => {
+  if (!value || !key) return '#f3f4f6';
+  
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return '#f3f4f6';
+  
+  // Mapear keys igual que en tu código del mapa
+  let levelKey = key.toLowerCase();
+  if (levelKey === 'pm2_5') levelKey = 'pm25';
+  if (levelKey === 'pm1_0') levelKey = 'pm1_0';
+  
+  const grupo = levels[levelKey];
+  if (!grupo) return '#e5e7eb';
+
+  return grupo.find(l => numValue <= l.max)?.color || '#f3f4f6';
+};
+
 const closeModal = (event) => {
   if (event.target === event.currentTarget || event.target.classList.contains('modal-overlay')) {
     emit('close');
   }
 };
+
+// 🔸 Funciones de audio
 const hablarConGoogleTTS = async (texto) => {
   const apiKey = 'AIzaSyCJKvUyLnK90FR2Q8w0JXgoqde7vHgruOY';
 
-  const response = await fetch(
-    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: { text: texto },
-        voice: { languageCode: 'es-US', name: 'es-US-Neural2-A' },
-        audioConfig: { audioEncoding: 'MP3' },
-      }),
-    }
-  );
+  try {
+    const response = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text: texto },
+          voice: { languageCode: 'es-US', name: 'es-US-Neural2-A' },
+          audioConfig: { audioEncoding: 'MP3' },
+        }),
+      }
+    );
 
-  const data = await response.json();
-  const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-  audio.play();
+    const data = await response.json();
+    const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+    audio.play();
+  } catch (error) {
+    console.error('Error en TTS:', error);
+  }
 };
 
-const hablarNivel = async (thing) => {
-  const valor = Math.round(thing.last_value);
-  const nombre = thing.name;
-  let mensaje = `${nombre} es de ${valor} ${props.measurementUnits[nombre]}. `;
+const hablarNivel = async (key, value) => {
+  const displayName = getDisplayName(key);
+  const valor = Math.round(parseFloat(value));
+  const locationName = getLocationName(currentPointKey.value);
+  
+  let mensaje = `En ${locationName}, ${displayName} es de ${valor} ${props.measurementUnits[displayName]}. `;
 
   // Explicación por tipo
-  if (nombre === "CO2") {
+  if (key === "CO2") {
     if (valor <= 1000) {
-      mensaje += "El nivel de dióxido de carbono es bajo, lo cual indica que hay una buena ventilación en el ambiente. Puede permanecer en este espacio sin preocupaciones, realizar cualquier actividad y respirar con normalidad.";
+      mensaje += "El nivel de dióxido de carbono es bajo, lo cual indica que hay una buena ventilación en el ambiente. Puede permanecer en este espacio sin preocupaciones.";
     } else if (valor <= 1500) {
-      mensaje += "El nivel de CO₂ es moderadamente alto. Esto podría deberse a una ventilación insuficiente. Se recomienda abrir las ventanas o activar sistemas de ventilación para mejorar la calidad del aire, especialmente si hay varias personas en el lugar.";
+      mensaje += "El nivel de dióxido de carbono es moderadamente alto. Se recomienda abrir las ventanas o activar sistemas de ventilación.";
     } else if (valor <= 2000) {
-      mensaje += "El nivel de CO₂ es alto. Permanecer en este ambiente durante periodos prolongados podría causar somnolencia, fatiga o dolores de cabeza. Es aconsejable reducir el tiempo en este lugar y evitar esfuerzos físicos. Ventile el área lo antes posible.";
+      mensaje += "El nivel de dióxido de carbono es alto. Podría causar somnolencia y fatiga. Es aconsejable ventilar el área.";
     } else {
-      mensaje += "El nivel de CO₂ es muy elevado. Esta situación puede ser peligrosa para la salud, especialmente en personas con problemas respiratorios. Se recomienda evacuar el área si es posible o utilizar equipos de protección como mascarillas con filtro. Ventile inmediatamente.";
+      mensaje += "El nivel de dióxido de carbono es muy elevado y puede ser peligroso. Se recomienda ventilar el área si es posible.";
     }
   }
-
-  else if (["PM10", "PM2_5", "PM1_0"].includes(nombre)) {
+  
+  else if (["PM10", "PM2_5"].includes(key)) {
     if (valor <= 50) {
-      mensaje += `El nivel de partículas ${nombre} es bajo, lo que indica que la calidad del aire es buena. Puede respirar sin riesgos y realizar cualquier actividad, incluso al aire libre, sin necesidad de precauciones especiales.`;
+      mensaje += `El nivel de partículas ${displayName} es bajo, la calidad del aire es buena.`;
     } else if (valor <= 100) {
-      mensaje += `El nivel de partículas ${nombre} es moderado. Aunque no representa un riesgo grave para la mayoría de las personas, quienes padecen enfermedades respiratorias o cardiovasculares deberían considerar reducir su exposición prolongada.`;
+      mensaje += `El nivel de partículas ${displayName} es moderado. Personas sensibles deberían tomar precauciones.`;
     } else if (valor <= 150) {
-      mensaje += `El nivel de partículas ${nombre} es alto. Esto puede afectar la salud, especialmente en niños, adultos mayores y personas con condiciones respiratorias. Se recomienda evitar ejercicios al aire libre, cerrar ventanas y usar purificadores de aire si es posible.`;
+      mensaje += `El nivel de partículas ${displayName} es alto. Se recomienda reducir la exposición.`;
     } else {
-      mensaje += `El nivel de partículas ${nombre} es muy alto y peligroso. La exposición a este aire puede causar problemas respiratorios severos. Se recomienda permanecer en interiores, evitar cualquier esfuerzo físico, y utilizar mascarillas con filtros certificados si debe salir.`;
+      mensaje += `El nivel de partículas ${displayName} es muy alto y peligroso. Use protección respiratoria.`;
     }
   }
-
-  else if (nombre === "Temperature") {
+  
+  else if (key === "Temp") {
     if (valor < 18) {
-      mensaje += "La temperatura es baja. Puede sentirse frío en interiores sin calefacción. Se recomienda abrigarse adecuadamente.";
+      mensaje += "La temperatura es baja. Se recomienda abrigarse.";
     } else if (valor <= 26) {
-      mensaje += "La temperatura está dentro de un rango confortable. Es ideal para la mayoría de actividades cotidianas sin necesidad de ajustes.";
-    } else if (valor <= 32) {
-      mensaje += "La temperatura es cálida. Se recomienda mantenerse hidratado, especialmente si se realiza actividad física.";
+      mensaje += "La temperatura está en un rango confortable.";
     } else {
-      mensaje += "La temperatura es alta. Existe riesgo de golpe de calor. Evite exponerse directamente al sol y use ropa ligera.";
+      mensaje += "La temperatura es alta. Manténgase hidratado.";
     }
   }
-
-  else if (nombre === "Humidity") {
+  
+  else if (key === "Hum") {
     if (valor < 30) {
-      mensaje += "La humedad es baja, lo que puede resecar la piel y las vías respiratorias. Se recomienda usar humidificadores o hidratarse más de lo normal.";
+      mensaje += "La humedad es baja.";
     } else if (valor <= 60) {
-      mensaje += "La humedad está en un nivel saludable. No representa riesgo para la mayoría de personas.";
+      mensaje += "La humedad está en un nivel saludable.";
     } else {
-      mensaje += "La humedad es alta. Puede generar incomodidad, condensación o favorecer la proliferación de hongos. Se recomienda ventilar el espacio.";
+      mensaje += "La humedad es alta.";
     }
   }
 
@@ -330,20 +434,21 @@ const hablarNivel = async (thing) => {
 };
 
 const leerRecomendacion = async (tipo) => {
-  let texto = "";
+  const locationName = getLocationName(currentPointKey.value);
+  let texto = `En ${locationName}: `;
 
   switch (tipo) {
     case 'evacuacion':
-      texto = `Los niveles de contaminación son peligrosos. Se recomienda evacuar la zona o usar protección. CO2 actual: ${co2.value} partes por millón. Partículas: PM uno punto cero ${pm1_0.value}, PM dos punto cinco ${pm2_5.value}, y PM diez ${pm10.value}.`;
+      texto += `Los niveles de contaminación son peligrosos. Se recomienda evacuar la zona. C O 2: ${co2.value} partes por millón.`;
       break;
     case 'limitacion':
-      texto = `La calidad del aire es mala. Evite esfuerzos físicos. CO2 actual: ${co2.value}. PM uno punto cero: ${pm1_0.value}, dos punto cinco: ${pm2_5.value}, y diez: ${pm10.value}.`;
+      texto += `La calidad del aire es mala. Evite esfuerzos físicos. C O 2: ${co2.value}.`;
       break;
     case 'ventilar':
-      texto = `El ambiente requiere ventilación. Los niveles de dióxido de carbono o partículas son altos. CO2 actual: ${co2.value}. PMs: ${pm1_0.value}, ${pm2_5.value}, ${pm10.value}.`;
+      texto += `El ambiente requiere ventilación. C O 2: ${co2.value}.`;
       break;
     case 'optimo':
-      texto = `El ambiente es óptimo. Todos los niveles están dentro de rangos saludables. CO2: ${co2.value}. PMs: uno punto cero ${pm1_0.value}, dos punto cinco ${pm2_5.value}, diez ${pm10.value}.`;
+      texto += `El ambiente es óptimo. C O 2: ${co2.value}.`;
       break;
   }
 
@@ -353,7 +458,14 @@ const leerRecomendacion = async (tipo) => {
 </script>
 
 
+
 <style scoped>
+.image-alert {
+  display: block;
+  max-width: 20%;
+  width: 100%;
+  border-radius: 12px;
+}
 .modal-overlay {
   font-family: 'Segoe UI', sans-serif;
   position: fixed;
@@ -367,7 +479,14 @@ const leerRecomendacion = async (tipo) => {
 .speak-button {
   background: none;
   border: none;
-  font-size: 1.2rem;
+  font-size: 3rem;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.speak-button2 {
+  background: none;
+  border: none;
+  font-size: 2rem;
   cursor: pointer;
   margin-left: 8px;
 }

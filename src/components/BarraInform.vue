@@ -3,7 +3,7 @@
     <div class="container">
       <!-- Logo y nombre -->
       <div class="logo-section">
-        <img src="@/assets/jorge1.jpg" alt="Logo" class="logo" />
+        <img src="@/components/jorge1.jpg" alt="Logo" class="logo" />
         <span class="name">Jorge Valerio Araoz</span>
       </div>
 

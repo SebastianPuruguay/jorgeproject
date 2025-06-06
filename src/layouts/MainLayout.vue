@@ -3,20 +3,23 @@
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import BarraInform from '@/components/BarraInform.vue';
 import { getThings } from '@/services/arduinoService';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, provide } from 'vue';
 import "leaflet/dist/leaflet.css";
 import * as L from 'leaflet';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import "leaflet.markercluster";
-import { addressPoints } from '../components/markerDemo';
-import icon from '../components/icon.png';
-import markerShadow from '../components/marker-shadow.png';
+import { addressPoints } from '@/components/markerDemo';
+import icon from '@/components/icon.png';
+import markerShadow from '@/components/marker-shadow.png';
 import ModalComponent from "@/pages/ModalMasInfo.vue";
-
 // pa que hable la pag
 
+const datosCalidadAire = ref([]);
+const currentPointKey = ref('airedatos');
 
+provide('datosCalidadAire', datosCalidadAire);
+provide('currentPointKey', currentPointKey);
 const isModalOpen = ref(false);
 const selectedContaminationData = ref(null);
 // Estado para manejar qué modal está abierto
@@ -32,7 +35,6 @@ const closeModal = () => {
 
 const mapContainer = ref(null);
 const initialMap = ref(null);
-const things = ref([]);
 const toggleDrawer = () => {
   console.log("Abrir/cerrar menú lateral");
 };
@@ -47,7 +49,6 @@ const myIcon = L.icon({
 });
 
 onMounted(async () => {
-
 
     if (!mapContainer.value) return;
 
@@ -67,11 +68,12 @@ onMounted(async () => {
 
     // Obtener datos desde Arduino IoT
     try {
-        things.value = await getThings();
-        console.log('Datos obtenidos:', things.value);
+        datosCalidadAire.value = await getThings();
+        console.log('Datos obtenidos:', datosCalidadAire);
     } catch (error) {
         console.error('Error al obtener datos:', error);
     }
+
     initialMap.value.whenReady(async () => {    
     const markers = L.markerClusterGroup();
 
@@ -148,51 +150,47 @@ onMounted(async () => {
         return "https://media.giphy.com/media/3o7TKsQGzYHxz5OfAA/giphy.gif"; // GIF predeterminado
       }
     }
+addressPoints.forEach((point) => {
+  
+  if (point.latitude && point.longitude && datosCalidadAire.value[point.key]) {
+    const data = datosCalidadAire.value[point.key];
+    const co2Value = parseFloat(data.CO2) || 0;
+    const pm10Value = parseFloat(data.PM10) || 0;
+    const pm25Value = parseFloat(data.PM2_5) || 0;
+    const co2Level = levels.co2.find(l => co2Value <= l.max);
+    const pm10Level = levels.pm10.find(l => pm10Value <= l.max);
+    const pm25Level = levels.pm25.find(l => pm25Value <= l.max);
 
-    addressPoints.forEach((point) => {
-        if (point.latitude && point.longitude && things.value.length > 2) {
-            const thingTemperature = things.value[1] || { name: 'Desconocido', last_value: 'N/A' };
-            const thingCO2 = things.value[2] || { name: 'Desconocido', last_value: 'N/A' };
-            const thingPM10 = things.value[3] || { name: 'Desconocido', last_value: 'N/A' };
-            const thingPM1_0 = things.value[4] || { name: 'Desconocido', last_value: 'N/A' };
-            const thingPM25 = things.value[5] || { name: 'Desconocido', last_value: 'N/A' };
-            
-            
-        const co2Value = parseFloat(thingCO2.last_value) || 0;
-        const pm10Value = parseFloat(thingPM10.last_value) || 0;
-        const pm25Value = parseFloat(thingPM25.last_value) || 0;
+    const worstColor = [co2Level.color, pm10Level.color, pm25Level.color].sort((a, b) => {
+      return Object.values(levels).flat().find(l => l.color === b).max -
+             Object.values(levels).flat().find(l => l.color === a).max;
+    })[0];
 
-
-        const co2Level = levels.co2.find(l => co2Value <= l.max);
-        const pm10Level = levels.pm10.find(l => pm10Value <= l.max);
-        const pm25Level = levels.pm25.find(l => pm25Value <= l.max);
-
-        // Determinar el color más crítico (peor valor)
-        const worstColor = [co2Level.color, pm10Level.color, pm25Level.color].sort((a, b) => {
-            return Object.values(levels).flat().find(l => l.color === b).max - 
-                   Object.values(levels).flat().find(l => l.color === a).max;
-        })[0];
+    const iconUrl = point.key === "airedatosSRCO"
+      ? "icon-srco.png"
+      : "icon-normal.png";
 
          // Crear el botón manualmente
          const button = document.createElement("button");
-button.textContent = "+ Info";
-button.style.cssText = `
-  background-color: #2563eb; /* azul elegante */
-  color: white;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  transition: background-color 0.3s ease;
-  margin-top: 20px;
-`;
+          button.textContent = "+ Info";
+          button.style.cssText = `
+          background-color: #2563eb; /* azul elegante */
+          color: white;
+          padding: 12px 24px;
+          font-size: 1rem;
+          font-weight: 600;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          transition: background-color 0.3s ease;
+          margin-top: 20px;
+        `;
 button.onmouseover = () => button.style.backgroundColor = '#1d4ed8';
 button.onmouseout = () => button.style.backgroundColor = '#2563eb';
 
 button.addEventListener("click", () => {
+  currentPointKey.value = point.key;
   openModal(ModalComponent);
 });
 
@@ -308,7 +306,6 @@ popupDiv.innerHTML = `
 
                 // Add button to popup
                 popupDiv.appendChild(button);
-
                 // Replace popup content with new dynamic div
                 const popupContainer = document.getElementById("popup-container");
                 if (popupContainer) {
@@ -319,6 +316,13 @@ popupDiv.innerHTML = `
                 // Create marker and add to cluster
                 const marker = L.marker([point.latitude, point.longitude], { icon: myIcon })
                 .bindPopup(popupDiv, { maxWidth: "auto", minWidth: 400, maxHeight: 500 });
+                marker.on('popupopen', () => {
+                const timestamp = datosCalidadAire.value[point.key]?.timestamp;
+                if (timestamp) {
+                  localStorage.setItem("ultima actualizacion", timestamp);
+                  console.log("Guardado en localStorage:", timestamp);
+                }
+              });
                 markers.addLayer(marker);
             }
         });
@@ -336,19 +340,15 @@ popupDiv.innerHTML = `
 
     // Leyenda de temperatura y humedad (arriba a la derecha)
 const climateLegend = L.control({ position: 'topright' });
-
 climateLegend.onAdd = function () {
-  const thingHumidity = things.value[0] || { name: 'Desconocido', last_value: 'N/A' };
-            const thingTemperature = things.value[1] || { name: 'Desconocido', last_value: 'N/A' };
+  const thingHumidity = datosCalidadAire.value.airedatos.Hum || 0;
+  const thingTemperature = datosCalidadAire.value.airedatos.Temp || 0;
 
-            
-           
-  const HumidityValue = parseFloat(thingHumidity.last_value) || 0;
-  const TemperatureValue = parseFloat(thingTemperature.last_value) || 0;    
+             
 
   const div = L.DomUtil.create('div', 'info climate-legend');
-  const temp = Math.round((HumidityValue)) || "--";
-  const hum = Math.round((TemperatureValue)) || "--";
+  const temp = Math.round((thingHumidity)) || "--";
+  const hum = Math.round((thingTemperature)) || "--";
 
   div.innerHTML = `
     <div style="
@@ -401,17 +401,15 @@ climateLegend.addTo(initialMap.value);
 
 <template>
   <div>
-    <HeaderComponent @toggleDrawer="toggleDrawer" />
+    <HeaderComponent />
 
+    <!-- Este div será el mapa -->
+    <div id="map" ref="mapContainer" class="map-container"></div>
 
-
-    <div class="p-4"></div>
+    <ModalComponent v-if="isModalOpen" @close="closeModal" />
   </div>
-
-  <div id="map" ref="mapContainer" style="height: 515px;"></div>
-  <ModalComponent v-if="isModalOpen" @close="closeModal" />
-  <BarraInform class="bg-red-500 text-white" />
 </template>
+
 
   
 <style>
@@ -455,12 +453,20 @@ climateLegend.addTo(initialMap.value);
 /* Hacer que el `body` y `html` ocupen toda la pantalla */
 html, body {
   width: 100%;
-  height: 100%;
+  margin: 0;
   background: #504e4ed9; /* Opcional: color de fondo oscuro */
   color: white; /* Opcional: color de texto */
   overflow-x: hidden; /* Evita scroll horizontal */
 }
 
+#map {
+  position: absolute;
+  top: 10;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 0; /* Ajusta según el z-index del HeaderComponent */
+}
 /* Asegurar que el `div` raíz también ocupe toda la pantalla */
 #app {
   width: 100%;

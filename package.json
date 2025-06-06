@@ -16,9 +16,11 @@
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "mdb-vue-ui-kit": "^6.0.0",
+    "mqtt": "^5.12.1",
     "quasar": "^2.18.1",
     "querystring-es3": "^0.2.1",
-    "vue": "^3.2.13"
+    "vue": "^3.2.13",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
