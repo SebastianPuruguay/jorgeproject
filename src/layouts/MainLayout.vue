@@ -77,230 +77,215 @@ onMounted(async () => {
     initialMap.value.whenReady(async () => {    
     const markers = L.markerClusterGroup();
 
-    const levels = {
-    co2: [
-        { max: 400, color: '#00FF00', label: 'Bajo (Excelente)' }, 
-        { max: 1000, color: '#00FF00', label: 'Bueno' }, 
-        { max: 1500, color: '#FFA200', label: 'Somnolencia' }, 
-        { max: 2000, color: '#FFA500', label: 'Alto (Fatiga)' }, 
-        { max: 5000, color: '#FF4500', label: 'Muy alto (Mareos)' }, 
-        { max: Infinity, color: '#8B0000', label: 'Extremo (Emergencia)' }
-    ],
-    pm10: [
-        { max: 50, color: '#00FF00', label: 'Bueno' }, 
-        { max: 100, color: '#FFFF00', label: 'Moderado' }, 
-        { max: 250, color: '#FFA500', label: 'Poco saludable' }, 
-        { max: 350, color: '#FF4500', label: 'Muy dañino' }, 
-        { max: Infinity, color: '#8B0000', label: 'Peligroso' }
-    ],
-    pm25: [
-        { max: 30, color: '#00FF00', label: 'Bueno' }, 
-        { max: 60, color: '#FFFF00', label: 'Moderado' }, 
-        { max: 150, color: '#FFA500', label: 'Poco saludable' }, 
-        { max: 250, color: '#FF4500', label: 'Muy dañino' }, 
-        { max: Infinity, color: '#8B0000', label: 'Peligroso' }
-    ]
-    };
-    function getGifByCO2Level(level) {
-      if (level.includes('Bajo (Excelente)')) {
-        return "https://media.giphy.com/media/qXFLhFCzhUTPxNz91f/giphy.gif?cid=ecf05e47c7omy75yefgv44996by7tjda35dbrflv1q2iude6&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Bosque verde/naturaleza saludable
-      } else if (level.includes('Bueno')) {
-        return "https://media.giphy.com/media/qXFLhFCzhUTPxNz91f/giphy.gif?cid=ecf05e47c7omy75yefgv44996by7tjda35dbrflv1q2iude6&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Ciudad con algo de contaminación
-      }else if (level.includes('Somnolencia')) {
-        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnExancyd2xsZWNzcm03eXI2amNnd21ua3Q0NzZ2OWpyamNwbGFzNSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l378aiPPFAGEsetIk/giphy.gif"; // Ciudad con algo de contaminación
-      } else if (level.includes('Alto (Fatiga)')) {
-        return "https://media.giphy.com/media/r7iUygqqlRe6vpFEIw/giphy.gif?cid=790b76112mzqscgyf9xtqyd3nlht4d6611tzc03jtkv577cz&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Smog industrial
-      } else if (level.includes('Muy alto (Mareos)')) {
-        return "https://media.giphy.com/media/hUKYX9XcTmGDVn5TP0/giphy.gif?cid=790b7611pcuy2ia8jekfbf1yogbtlejxqtbpxfjlrbkof4p2&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Contaminación severa
-      } else if (level.includes('Extremo (Emergencia)')) {
-        return "https://media.giphy.com/media/iApH5a3k1sYvu/giphy.gif?cid=790b7611bo7g6aqu11aio0ykzyw3wk08l01lpqgim9zzag7m&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Emergencia/evacuación
-      } else {
-        return "https://media.giphy.com/media/Hkya3YFcXcmQ0/giphy.gif"; // GIF predeterminado
-      }
-    }
+const levels = {
+  co2: [
+    { max: 800, color: '#00FF00', label: 'Óptimo (Aire Fresco)' }, // Unificamos "Excelente" y "Bueno" hasta un umbral razonable
+    { max: 1200, color: '#FFFF00', label: 'Aceptable (Ventilar)' }, // Aquí es donde la somnolencia empieza a ser un factor, sugiere ventilación
+    { max: 2000, color: '#FFA500', label: 'Elevado (Fatiga)' },
+    { max: 5000, color: '#FF4500', label: 'Muy Alto (Mareos/Riesgo)' },
+    { max: Infinity, color: '#8B0000', label: 'Crítico (Evacuar)' }
+  ],
+  pm10: [
+    { max: 50, color: '#00FF00', label: 'Óptimo' },
+    { max: 100, color: '#FFFF00', label: 'Moderado' },
+    { max: 200, color: '#FFA500', label: 'Elevado (Evitar)' }, // Subimos el umbral para "Poco saludable" para mayor diferenciación
+    { max: 300, color: '#FF4500', label: 'Muy Alto (Dañino)' },
+    { max: Infinity, color: '#8B0000', label: 'Crítico (Peligroso)' }
+  ],
+  pm25: [
+    { max: 35, color: '#00FF00', label: 'Óptimo' }, // Ajuste para ser más estricto con PM2.5
+    { max: 75, color: '#FFFF00', label: 'Moderado' },
+    { max: 150, color: '#FFA500', label: 'Elevado (Evitar)' },
+    { max: 250, color: '#FF4500', label: 'Muy Alto (Dañino)' },
+    { max: Infinity, color: '#8B0000', label: 'Crítico (Peligroso)' }
+  ],
+};
 
-    function getGifByPM10Level(level) {
-      if (level.includes('Bueno')) {
-        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXAzb3dnbm9wd2djZnAzaDloYzZiY2hrbDJ3dnYyNzVrMnpqMTY2biZlcD12MV9naWZzX3NlYXJjaCZjdD1n/jI77q8Mc5yOs5wncJe/giphy.gif"; // Aire limpio
-      } else if (level.includes('Moderado')) {
-        return "https://media.giphy.com/media/d2Z7keyUwp4rzuG4/giphy.gif?cid=790b7611hsul7000y5ur12tzz7u7hga81sm6mvttlejcpdgm&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Partículas flotando
-      } else if (level.includes('Poco saludable')) {
-        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGxiejVteTk4ZGl1NGJxZ3hxYjNjeDNsM2o5aTZpY3RxbzQ4MXV1YSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/KchY32GLJK05JNktDq/giphy.gif"; // Polvo visible
-      } else if (level.includes('Muy dañino')) {
-        return "https://media.giphy.com/media/j7wBU7aHcKf7y/giphy.gif?cid=ecf05e470ermngvkjz9dmj0ect5zz18kph0tsf0ivrtgky8i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Polvo denso/smog
-      } else if (level.includes('Peligroso')) {
-        return "https://media.giphy.com/media/I4G0jcOtIyagIT8Ory/giphy.gif?cid=ecf05e47t397pyufysrgndiz7m0c1727immo78tg3vurrt0i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Tormenta de polvo/contaminación extrema
-      } else {
-        return "https://media.giphy.com/media/f6hnhHkks8bk4jwjh3/giphy.gif"; // GIF predeterminado
-      }
-    }
+// Las funciones getGifBy...Level permanecen igual, pero los labels que reciben ahora son los nuevos.
+// Asegúrate de actualizar los GIFs si quieres que reflejen los nuevos labels/significados más específicos.
+function getGifByCO2Level(level) {
+  if (level.includes('Óptimo')) {
+    return "https://media.giphy.com/media/qXFLhFCzhUTPxNz91f/giphy.gif?cid=ecf05e47c7omy75yefgv44996by7tjda35dbrflv1q2iude6&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Bosque verde/naturaleza saludable
+  } else if (level.includes('Aceptable')) {
+    return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnExancyd2xsZWNzcm03eXI2amNnd21ua3Q0NzZ2OWpyamNwbGFzNSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l378aiPPFAGEsetIk/giphy.gif"; // Ciudad con algo de contaminación / ventilación
+  } else if (level.includes('Elevado')) {
+    return "https://media.giphy.com/media/r7iUygqqlRe6vpFEIw/giphy.gif?cid=790b76112mzqscgyf9xtqyd3nlht4d6611tzc03jtkv577cz&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Smog industrial
+  } else if (level.includes('Muy Alto')) {
+    return "https://media.giphy.com/media/hUKYX9XcTmGDVn5TP0/giphy.gif?cid=790b7611pcuy2ia8jekfbf1yogbtlejxqtbpxfjlrbkof4p2&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Contaminación severa
+  } else if (level.includes('Crítico')) {
+    return "https://media.giphy.com/media/iApH5a3k1sYvu/giphy.gif?cid=790b7611bo7g6aqu11aio0ykzyw3wk08l01lpqgim9zzag7m&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Emergencia/evacuación
+  } else {
+    return "https://media.giphy.com/media/Hkya3YFcXcmQ0/giphy.gif"; // GIF predeterminado
+  }
+}
 
-    function getGifByPM25Level(level) {
-      if (level.includes('Bueno')) {
-        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXAzb3dnbm9wd2djZnAzaDloYzZiY2hrbDJ3dnYyNzVrMnpqMTY2biZlcD12MV9naWZzX3NlYXJjaCZjdD1n/jI77q8Mc5yOs5wncJe/giphy.gif"; // Respiración normal
-      } else if (level.includes('Moderado')) {
-        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWVjcnAxc2F0bXp4YXF5cWFxN252cW9sZ2pmOXFkYTdwNmJmZ3hwcSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/vVHbd6Xj1kBtc3FAio/giphy.gif"; // Leve irritación
-      } else if (level.includes('Poco saludable')) {
-        return "https://media.giphy.com/media/pMMbIx8KqBfVPip6xV/giphy.gif?cid=790b7611gzzlyv7dv144zffdjw0801z23eyfsxp3urugg1tw&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Problema respiratorio
-      } else if (level.includes('Muy dañino')) {
-        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGVvMXFhdnFncTRzZXBtaHBsN2VjaDBkeDY3d3A0N2lneGduaDBsaiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Rm2iJHrOmNysyBCpF5/giphy.gif"; // Efectos graves respiratorios
-      } else if (level.includes('Peligroso')) {
-        return "https://media.giphy.com/media/I4G0jcOtIyagIT8Ory/giphy.gif?cid=ecf05e47t397pyufysrgndiz7m0c1727immo78tg3vurrt0i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Mascarilla/protección extrema
-      } else {
-        return "https://media.giphy.com/media/3o7TKsQGzYHxz5OfAA/giphy.gif"; // GIF predeterminado
-      }
-    }
+function getGifByPM10Level(level) {
+  if (level.includes('Óptimo')) {
+    return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXAzb3dnbm9wd2djZnAzaDloYzZiY2hrbDJ3dnYyNzVrMnpqMTY2biZlcD12MV9naWZzX3NlYXJjaCZjdD1n/jI77q8Mc5yOs5wncJe/giphy.gif"; // Aire limpio
+  } else if (level.includes('Moderado')) {
+    return "https://media.giphy.com/media/d2Z7keyUwp4rzuG4/giphy.gif?cid=790b7611hsul7000y5ur12tzz7u7hga81sm6mvttlejcpdgm&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Partículas flotando
+  } else if (level.includes('Elevado')) {
+    return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGxiejVteTk4ZGl1NGJxZ3hxYjNjeDNsM2o5aTZpY3RxbzQ4MXV1YSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/KchY32GLJK05JNktDq/giphy.gif"; // Polvo visible
+  } else if (level.includes('Muy Alto')) {
+    return "https://media.giphy.com/media/j7wBU7aHcKf7y/giphy.gif?cid=ecf05e470ermngvkjz9dmj0ect5zz18kph0tsf0ivrtgky8i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Polvo denso/smog
+  } else if (level.includes('Crítico')) {
+    return "https://media.giphy.com/media/I4G0jcOtIyagIT8Ory/giphy.gif?cid=ecf05e47t397pyufysrgndiz7m0c1727immo78tg3vurrt0i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Tormenta de polvo/contaminación extrema
+  } else {
+    return "https://media.giphy.com/media/f6hnhHkks8bk4jwjh3/giphy.gif"; // GIF predeterminado
+  }
+}
+
+function getGifByPM25Level(level) {
+  if (level.includes('Óptimo')) {
+    return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXAzb3dnbm9wd2djZnAzaDloYzZiY2hrbDJ3dnYyNzVrMnpqMTY2biZlcD12MV9naWZzX3NlYXJjaCZjdD1n/jI77q8Mc5yOs5wncJe/giphy.gif"; // Respiración normal
+  } else if (level.includes('Moderado')) {
+    return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWVjcnAxc2F0bXp4YXF5cWFxN252cW9sZ2pmOXFkYTdwNmJmZ3hwcSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/vVHbd6Xj1kBtc3FAio/giphy.gif"; // Leve irritación
+  } else if (level.includes('Elevado')) {
+    return "https://media.giphy.com/media/pMMbIx8KqBfVPip6xV/giphy.gif?cid=790b7611gzzlyv7dv144zffdjw0801z23eyfsxp3urugg1tw&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Problema respiratorio
+  } else if (level.includes('Muy Alto')) {
+    return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGVvMXFhdnFncTRzZXBtaHBsN2VjaDBkeDY3d3A0N2lneGduaDBsaiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Rm2iJHrOmNysyBCpF5/giphy.gif"; // Efectos graves respiratorios
+  } else if (level.includes('Crítico')) {
+    return "https://media.giphy.com/media/I4G0jcOtIyagIT8Ory/giphy.gif?cid=ecf05e47t397pyufysrgndiz7m0c1727immo78tg3vurrt0i&ep=v1_gifs_search&rid=giphy.gif&ct=g"; // Mascarilla/protección extrema
+  } else {
+    return "https://media.giphy.com/media/3o7TKsQGzYHxz5OfAA/giphy.gif"; // GIF predeterminado
+  }
+}
+
 addressPoints.forEach((point) => {
-  
+
   if (point.latitude && point.longitude && datosCalidadAire.value[point.key]) {
     const data = datosCalidadAire.value[point.key];
     const co2Value = parseFloat(data.CO2) || 0;
     const pm10Value = parseFloat(data.PM10) || 0;
     const pm25Value = parseFloat(data.PM2_5) || 0;
+
     const co2Level = levels.co2.find(l => co2Value <= l.max);
     const pm10Level = levels.pm10.find(l => pm10Value <= l.max);
     const pm25Level = levels.pm25.find(l => pm25Value <= l.max);
 
-    const worstColor = [co2Level.color, pm10Level.color, pm25Level.color].sort((a, b) => {
-      return Object.values(levels).flat().find(l => l.color === b).max -
-             Object.values(levels).flat().find(l => l.color === a).max;
-    })[0];
+    // 1. Encontrar el índice de severidad para cada contaminante.
+    // Un índice más alto significa un peor estado.
+    const co2Index = levels.co2.indexOf(co2Level);
+    const pm10Index = levels.pm10.indexOf(pm10Level);
+    const pm25Index = levels.pm25.indexOf(pm25Level);
+
+    // 2. Determinar cuál es el peor nivel general.
+    let worstIndex = Math.max(co2Index, pm10Index, pm25Index);
+    let worstPollutantName = 'CO₂';
+    let worstPollutantLevel = co2Level;
+    let worstPollutantGif = getGifByCO2Level(co2Level.label);
+
+    if (pm10Index > worstIndex) { // Corregido: solo actualiza si es estrictamente peor
+      worstIndex = pm10Index;
+      worstPollutantName = 'PM10';
+      worstPollutantLevel = pm10Level;
+      worstPollutantGif = getGifByPM10Level(pm10Level.label);
+    }
+    if (pm25Index > worstIndex) { // Corregido: solo actualiza si es estrictamente peor
+      // PM2.5 tiene prioridad si su índice es igual al de PM10 por ser más dañino.
+      worstIndex = pm25Index;
+      worstPollutantName = 'PM2.5';
+      worstPollutantLevel = pm25Level;
+      worstPollutantGif = getGifByPM25Level(pm25Level.label);
+    } else if (pm25Index === worstIndex && worstPollutantName !== 'PM2.5') {
+        // Si PM2.5 tiene el mismo índice que el peor actual y no es PM2.5, le damos prioridad
+        worstPollutantName = 'PM2.5';
+        worstPollutantLevel = pm25Level;
+        worstPollutantGif = getGifByPM25Level(pm25Level.label);
+    }
+
+    // 3. Crear perfiles generales de estado basados en el índice de severidad.
+    const statusProfiles = {
+      0: { label: 'Excelente', message: '¡El aire es fresco y puro! Ideal para todas las actividades al aire libre.' },
+      1: { label: 'Moderado', message: 'La calidad del aire es moderada. Puedes disfrutar del exterior con normalidad.' },
+      2: { label: 'Regular', message: 'La calidad del aire es aceptable. Personas sensibles deben tener precaución.' },
+      3: { label: 'Dañino', message: 'Evita la actividad física intensa. Considera usar mascarilla si eres sensible.' },
+      4: { label: 'Muy Dañino', message: 'Evita salir a menos que sea esencial. Cierra ventanas y usa purificador de aire.' },
+      5: { label: 'Peligroso', message: '¡Alerta máxima! Permanece en interiores, filtra el aire y sigue las indicaciones de las autoridades.' }
+    };
+
+    // Seleccionar el perfil de estado general basado en el peor índice encontrado.
+    const overallStatus = statusProfiles[worstIndex] || statusProfiles[5];
+
+
+    let recommendationMessage = '';
+    let recommendationColor = overallStatus.color; // Usamos el color del estado general por defecto
+
+
+    // Asegurarse de que el color del popup refleje la recomendación más crítica o el estado general si no hay una recomendación específica de acción
+    const finalPopupColor = recommendationColor || worstPollutantLevel.color;
+
 
     const iconUrl = point.key === "airedatosSRCO"
       ? "icon-srco.png"
       : "icon-normal.png";
 
-         // Crear el botón manualmente
-         const button = document.createElement("button");
-          button.textContent = "+ Info";
-          button.style.cssText = `
-          background-color: #2563eb; /* azul elegante */
-          color: white;
-          padding: 12px 24px;
-          font-size: 1rem;
-          font-weight: 600;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-          transition: background-color 0.3s ease;
-          margin-top: 20px;
-        `;
-button.onmouseover = () => button.style.backgroundColor = '#1d4ed8';
-button.onmouseout = () => button.style.backgroundColor = '#2563eb';
+    // Crear el botón manualmente
+    const button = document.createElement("button");
+    button.textContent = "+ Info";
+    button.style.cssText = `
+    background-color: #2563eb; /* azul elegante */
+    color: white;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+  `;
+    button.onmouseover = () => button.style.backgroundColor = '#1d4ed8';
+    button.onmouseout = () => button.style.backgroundColor = '#2563eb';
 
-button.addEventListener("click", () => {
-  currentPointKey.value = point.key;
-  openModal(ModalComponent);
-});
+    button.addEventListener("click", () => {
+      currentPointKey.value = point.key;
+      openModal(ModalComponent);
+    });
 
 
-const popupDiv = document.createElement("div");
-popupDiv.innerHTML = `
-  <div style="
-    color: #111;
-    background: #fff;
-    padding: 20px;
-    border-radius: 14px;
-    max-width: 850px;
-    margin: 0 auto;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    font-family: 'Segoe UI', sans-serif;
-  ">
-    <h3 style="font-size: 1.4rem; margin-bottom: 16px; text-align: center; color: #1e3a8a;">
-      🔍 Niveles de Contaminación
+    const popupDiv = document.createElement("div");
+
+    popupDiv.innerHTML = `
+<div style="
+  background: ${finalPopupColor};
+  color: #111;
+  padding: 20px;
+  border-radius: 16px;
+  max-width: 550px;
+  margin: 0 auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  font-family: 'Segoe UI', sans-serif;
+  border: 3px solid rgba(255, 255, 255, 0.6);
+">
+  <div style="text-align: center; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 2px solid rgba(0, 0, 0, 0.1);">
+    <h3 style="font-size: 1.8rem; margin: 0; font-weight: 700;">
+      Calidad del Aire: ${overallStatus.label}
     </h3>
+  </div>
 
-    <div style="
-      display: flex;
-      justify-content: space-between;
-      align-items: stretch;
-      gap: 12px;
-      flex-wrap: nowrap;
-    ">
-
-      <!-- Tarjeta CO2 -->
-      <div style="
-        flex: 1;
-        background: #f3f4f6;
-        border-radius: 10px;
-        padding: 12px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        font-size: 0.9rem;
+  <div style="display: flex; align-items: center; gap: 20px;">
+    
+    <div style="flex-shrink: 0;">
+      <img src="${worstPollutantGif}" alt="Icono de calidad del aire" style="
+        width: 120px; 
+        height: 120px; 
+        border-radius: 12px; 
+        object-fit: cover;
+        display: block;
       ">
-        <p style="
-          background-color: ${co2Level.color};
-          color: black;
-          font-weight: 600;
-          padding: 6px 8px;
-          border-radius: 6px;
-          margin-bottom: 10px;
-          font-size: 0.85rem;
-        ">
-          CO2: ${co2Value} ppm — ${co2Level.label}
-        </p>
-        <img src="${getGifByCO2Level(co2Level.label)}" alt="Nivel de CO2"
-          style="width: 130px; height: auto; margin: 0 auto; border-radius: 6px;">
-      </div>
+    </div>
 
-      <!-- Tarjeta PM10 -->
-      <div style="
-        flex: 1;
-        background: #f3f4f6;
-        border-radius: 10px;
-        padding: 12px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        font-size: 0.9rem;
-      ">
-        <p style="
-          background-color: ${pm10Level.color};
-          color: black;
-          font-weight: 600;
-          padding: 6px 8px;
-          border-radius: 6px;
-          margin-bottom: 10px;
-          font-size: 0.85rem;
-        ">
-          PM10: ${pm10Value} µg/m³ — ${pm10Level.label}
-        </p>
-        <img src="${getGifByPM10Level(pm10Level.label)}" alt="Nivel de PM10"
-          style="width: 130px; height: auto; margin: 0 auto; border-radius: 6px;">
-      </div>
-
-      <!-- Tarjeta PM2.5 -->
-      <div style="
-        flex: 1;
-        background: #f3f4f6;
-        border-radius: 10px;
-        padding: 12px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        font-size: 0.9rem;
-      ">
-        <p style="
-          background-color: ${pm25Level.color};
-          color: black;
-          font-weight: 600;
-          padding: 6px 8px;
-          border-radius: 6px;
-          margin-bottom: 10px;
-          font-size: 0.85rem;
-        ">
-          PM2.5: ${pm25Value} µg/m³ — ${pm25Level.label}
-        </p>
-        <img src="${getGifByPM25Level(pm25Level.label)}" alt="Nivel de PM2.5"
-          style="width: 130px; height: auto; margin: 0 auto; border-radius: 6px;">
-      </div>
+    <div style="flex: 1; text-align: left;">
+      <p style="font-size: 1rem; margin: 0 0 12px 0; font-weight: 500;">
+        ${overallStatus.message}
+      </p>
 
     </div>
   </div>
-`;
-
+</div>
+`;  
 
 
 

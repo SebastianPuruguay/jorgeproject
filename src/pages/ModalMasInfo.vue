@@ -58,15 +58,15 @@
                 <strong>Ambiente no saludable</strong>
                 <button @click="leerRecomendacion('evacuacion')" class="speak-button" title="Escuchar recomendación">🔊</button>
                 </div>
-              <p>La calidad del aire es baja en este momento:</p>
+              <p>La calidad del aire presenta algunas consideraciones en este momento:</p>
               <ul>
               <li>CO₂ actual: {{ co2 }} ppm</li>
               <li>PM2.5: {{ pm2_5 }}, PM10: {{ pm10 }} µg/m³</li>
               </ul>
-              <p>Se recomienda salir del área si se puede, especialmente si hay niños, adultos mayores o personas con asma. Si necesitas quedarte, usar mascarilla puede ayudar.</p>
+              <p>Para su comodidad, le sugerimos considerar la ventilación del área. Si tiene sensibilidades respiratorias, o si hay niños o adultos mayores, tomar precauciones adicionales puede ser útil. Si se encuentra al aire libre, una mascarilla adecuada podría brindar un beneficio adicional.</p>
               </div>
                           <img
-            src="@/assets/mascarilla.png"
+            src="@/assets/usarmascarilla.jpg"
             alt="Evacuación recomendada"
             class="image-alert"
             />
@@ -82,12 +82,12 @@
             <strong>Evita esfuerzos físicos</strong>
             <button @click="leerRecomendacion('limitacion')" class="speak-button" title="Escuchar recomendación">🔊</button>
             </div>
-            <p>El aire no está en su mejor momento, especialmente para actividades físicas intensas.</p>
+            <p>La calidad del aire sugiere precaución, especialmente si planeas actividad física intensa.</p>
             <ul>
             <li>CO₂ actual: {{ co2 }} ppm</li>
             <li>PMs: {{ pm2_5 }}, {{ pm10 }} µg/m³</li>
             </ul>
-            <p>Evita hacer ejercicios o correr aquí por ahora. Si sientes molestias, muévete a un lugar con mejor ventilación.</p>
+            <p>Considera limitar los ejercicios de alta intensidad en este lugar por ahora. Si notas alguna molestia, busca un área con mejor ventilación para tu comodidad.</p>
             </div>
                         <img
             src="@/assets/noejericico.jpg"
@@ -172,7 +172,8 @@ const props = defineProps({
       Humidity: "%",
       CO2: "ppm",
       PM10: "µg/m³",
-      PM2_5: "µg/m³"
+      PM2_5: "µg/m³",
+      "PM2.5": "µg/m³",
     })
   }
 });
@@ -250,7 +251,7 @@ const pm10 = computed(() => {
 const shouldVentilate = computed(() => {
   return (
     (co2.value !== null && co2.value > 1000) ||
-    (pm2_5.value !== null && pm2_5.value > 50) ||
+    (pm2_5.value !== null && pm2_5.value > 75) ||
     (pm10.value !== null && pm10.value > 50)
   );
 });
@@ -258,7 +259,7 @@ const shouldVentilate = computed(() => {
 const shouldLimitActivities = computed(() => {
   return (
     (co2.value !== null && co2.value > 1500) ||
-    (pm2_5.value !== null && pm2_5.value > 100) ||
+    (pm2_5.value !== null && pm2_5.value > 115) ||
     (pm10.value !== null && pm10.value > 100)
   );
 });
@@ -288,13 +289,13 @@ const levels = {
   pm10: [
     { max: 50, color: '#00FF00', label: 'Bueno' },
     { max: 100, color: '#FFFF00', label: 'Moderado' },
-    { max: 250, color: '#FFA500', label: 'Poco saludable' },
-    { max: 350, color: '#FF4500', label: 'Muy dañino' },
+    { max: 150, color: '#FFA500', label: 'Poco saludable' },
+    { max: 200, color: '#FF4500', label: 'Muy dañino' },
     { max: Infinity, color: '#8B0000', label: 'Peligroso' }
   ],
   pm25: [
-    { max: 30, color: '#00FF00', label: 'Bueno' },
-    { max: 60, color: '#FFFF00', label: 'Moderado' },
+    { max: 75, color: '#00FF00', label: 'Bueno' },
+    { max: 115, color: '#FFFF00', label: 'Moderado' },
     { max: 150, color: '#FFA500', label: 'Poco saludable' },
     { max: 250, color: '#FF4500', label: 'Muy dañino' },
     { max: Infinity, color: '#8B0000', label: 'Peligroso' }
@@ -388,28 +389,38 @@ const hablarNivel = async (key, value) => {
   // Explicación por tipo
   if (key === "CO2") {
     if (valor <= 1000) {
-      mensaje += "El nivel de dióxido de carbono es bajo, lo cual indica que hay una buena ventilación en el ambiente. Puede permanecer en este espacio sin preocupaciones.";
+      mensaje += "Los niveles de dióxido de carbono son bajos y saludables. Disfruta del ambiente.";
     } else if (valor <= 1500) {
-      mensaje += "El nivel de dióxido de carbono es moderadamente alto. Se recomienda abrir las ventanas o activar sistemas de ventilación.";
+      mensaje += "Sugiero mejorar un poco la ventilación para mayor comodidad.";
     } else if (valor <= 2000) {
-      mensaje += "El nivel de dióxido de carbono es alto. Podría causar somnolencia y fatiga. Es aconsejable ventilar el área.";
+      mensaje += "Los niveles de dióxido de carbono pueden afectar la concentración; renueva el aire pronto.";
     } else {
-      mensaje += "El nivel de dióxido de carbono es muy elevado y puede ser peligroso. Se recomienda ventilar el área si es posible.";
+      mensaje += "Los niveles de dióxido de carbono son altos. Para sentirte mejor, ventila ahora el ambiente.";
     }
   }
   
-  else if (["PM10", "PM2_5"].includes(key)) {
-    if (valor <= 50) {
-      mensaje += `El nivel de partículas ${displayName} es bajo, la calidad del aire es buena.`;
-    } else if (valor <= 100) {
-      mensaje += `El nivel de partículas ${displayName} es moderado. Personas sensibles deberían tomar precauciones.`;
-    } else if (valor <= 150) {
-      mensaje += `El nivel de partículas ${displayName} es alto. Se recomienda reducir la exposición.`;
-    } else {
-      mensaje += `El nivel de partículas ${displayName} es muy alto y peligroso. Use protección respiratoria.`;
-    }
+else if (key === "PM2_5") {
+  if (valor < 75) {
+    mensaje += `El aire está limpio; aprovecha para actividades al aire libre.`;
+  } else if (valor <= 115) { // Rango 15 - 35
+    mensaje += `La calidad es aceptable, pero conviene limitar el humo interior.`;
+  } else if (valor <= 150) { // Rango 35 - 55
+    mensaje += `Personas con asma podrían sentir molestias; filtra el aire si es posible.`;
+  } else { // Rango > 55 (hasta 150 según tu ejemplo anterior, pero el texto aplica para > 55)
+    mensaje += `Conviene limitar la actividad física hasta que el aire mejore.`;
   }
-  
+}
+  else if (key === "PM10") {
+  if (valor < 50) {
+    mensaje += `El nivel de partículas gruesas es bajo; respira tranquilo.`;
+  } else if (valor <= 100) { // Rango 50 - 100
+    mensaje += `La calidad es aceptable; evita actividades que generen polvo extra.`;
+  } else if (valor <= 150) { // Rango 100 - 150
+    mensaje += `Personas alérgicas podrían notar molestias; toma precauciones.`;
+  } else { // Rango > 150
+    mensaje += `Hay mucho polvo en el ambiente; procura filtrar el aire interior.`;
+  }
+}
   else if (key === "Temp") {
     if (valor < 18) {
       mensaje += "La temperatura es baja. Se recomienda abrigarse.";
@@ -439,13 +450,13 @@ const leerRecomendacion = async (tipo) => {
 
   switch (tipo) {
     case 'evacuacion':
-      texto += `Los niveles de contaminación son peligrosos. Se recomienda evacuar la zona. C O 2: ${co2.value} partes por millón.`;
+      texto += `La calidad del aire es elevada. Para tu bienestar, ventila el ambiente y limita la actividad física intensa hasta que mejore`;
       break;
     case 'limitacion':
-      texto += `La calidad del aire es mala. Evite esfuerzos físicos. C O 2: ${co2.value}.`;
+      texto += `La calidad del aire está en un nivel más alto. Si eres sensible o tienes condiciones respiratorias, toma precauciones adicionales y considera filtrar el aire.`;
       break;
     case 'ventilar':
-      texto += `El ambiente requiere ventilación. C O 2: ${co2.value}.`;
+      texto += `La calidad del aire es buena. Para mayor confort, podrías considerar ventilar un poco o limitar fuentes de humo.`;
       break;
     case 'optimo':
       texto += `El ambiente es óptimo. C O 2: ${co2.value}.`;
